@@ -4,10 +4,9 @@ import puppy.code.movimientos.EstrategiaMovimiento;
 import puppy.code.movimientos.MovimientoRecto;
 import puppy.code.pokemones.Caterpie;
 import puppy.code.pokemones.Pokemon;
-import puppy.code.pokemones.Rattata;
 
 public class PokemonBuilder {
-    private String especie;
+    private Pokemon pokemonBase;
     private float x;
     private float y;
     private boolean esShiny;
@@ -15,7 +14,7 @@ public class PokemonBuilder {
     private EstrategiaMovimiento estrategia;
 
     public PokemonBuilder() {
-        this.especie = "CATERPIE";
+        this.pokemonBase = null;
         this.x = 0f;
         this.y = 0f;
         this.esShiny = false;
@@ -23,8 +22,9 @@ public class PokemonBuilder {
         this.estrategia = new MovimientoRecto();
     }
 
-    public PokemonBuilder conEspecie(String especie) {
-        this.especie = especie;
+    // Recibe cualquier subclase de Pokemon por polimorfismo (Cumple OCP: no requiere if-else)
+    public PokemonBuilder conPokemonBase(Pokemon pokemonBase) {
+        this.pokemonBase = pokemonBase;
         return this;
     }
 
@@ -50,23 +50,24 @@ public class PokemonBuilder {
     }
 
     public Pokemon build() {
-        Pokemon nuevoPokemon;
-        if ("RATTATA".equalsIgnoreCase(this.especie)) {
-            nuevoPokemon = new Rattata(this.x, this.y);
+        // Si no se especificó ninguno, por defecto instancia un Caterpie
+        if (this.pokemonBase == null) {
+            this.pokemonBase = new Caterpie(this.x, this.y);
         } else {
-            nuevoPokemon = new Caterpie(this.x, this.y);
+            this.pokemonBase.setX(this.x);
+            this.pokemonBase.setY(this.y);
         }
 
-        nuevoPokemon.setEsShiny(this.esShiny);
-        nuevoPokemon.setVelocidad(nuevoPokemon.getVelocidad() * this.multiplicadorVelocidad);
-        nuevoPokemon.setEstrategiaMovimiento(this.estrategia);
+        this.pokemonBase.setEsShiny(this.esShiny);
+        this.pokemonBase.setVelocidad(this.pokemonBase.getVelocidad() * this.multiplicadorVelocidad);
+        this.pokemonBase.setEstrategiaMovimiento(this.estrategia);
 
-        return nuevoPokemon;
+        return this.pokemonBase;
     }
 
-    // Getters y Setters para cumplir GM-5
-    public String getEspecie() { return especie; }
-    public void setEspecie(String especie) { this.especie = especie; }
+    // Getters y Setters estrictos para cumplir GM-5
+    public Pokemon getPokemonBase() { return pokemonBase; }
+    public void setPokemonBase(Pokemon pokemonBase) { this.pokemonBase = pokemonBase; }
     public float getX() { return x; }
     public void setX(float x) { this.x = x; }
     public float getY() { return y; }

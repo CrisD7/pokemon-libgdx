@@ -33,6 +33,7 @@ public class Kadabra extends Pokemon {
 
         setColisionActiva(false);
         cargarSpritesSombra();
+        setResistenciaCapturas(2);
     }
 
     private static void cargarSpritesSombra() {

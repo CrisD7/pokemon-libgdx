@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 import puppy.code.movimientos.EstrategiaMovimiento;
+import puppy.code.movimientos.MovimientoEstatico;
 
 public abstract class Pokemon {
     public static final int DIR_ABAJO = 0;
@@ -16,7 +17,6 @@ public abstract class Pokemon {
     public static final int DIR_IZQUIERDA = 2;
     public static final int DIR_DERECHA = 3;
 
-    // Textura compartida en memoria para el signo "!" de alerta
     private static Texture texturaExclamacion;
 
     private float x;
@@ -27,10 +27,15 @@ public abstract class Pokemon {
     private int puntosPorCaptura;
     private boolean esShiny;
     
-    // Referencia de posición del jugador y temporizador de alerta "!"
     private float objetivoX;
     private float objetivoY;
     private float tiempoAlerta;
+
+    // Atributos de resistencia, daño y animación de captura
+    private int resistenciaCapturas;
+    private float tiempoGolpeado;
+    private boolean capturando;
+    private float escalaCaptura;
 
     private Texture hojaSprites;
     private TextureRegion[][] framesDireccion;
@@ -53,6 +58,13 @@ public abstract class Pokemon {
         this.objetivoX = 0f;
         this.objetivoY = 0f;
         this.tiempoAlerta = 0f;
+        
+        // Por defecto cualquier Pokémon se captura de 1 golpe
+        this.resistenciaCapturas = 1;
+        this.tiempoGolpeado = 0f;
+        this.capturando = false;
+        this.escalaCaptura = 1.0f;
+
         this.direccionActual = DIR_ABAJO;
         this.animTimer = 0f;
         this.frameActual = 0;
@@ -63,20 +75,16 @@ public abstract class Pokemon {
         asegurarTexturaExclamacion();
     }
 
-    // Genera un ícono pixel art de "!" automáticamente sin requerir archivo PNG externo
     private static void asegurarTexturaExclamacion() {
         if (texturaExclamacion == null) {
             Pixmap pix = new Pixmap(16, 16, Pixmap.Format.RGBA8888);
-            // Borde negro del globo
             pix.setColor(Color.BLACK);
             pix.fillRectangle(2, 1, 12, 14);
-            // Fondo blanco
             pix.setColor(Color.WHITE);
             pix.fillRectangle(3, 2, 10, 12);
-            // Signo de exclamación rojo (!)
             pix.setColor(Color.RED);
-            pix.fillRectangle(7, 3, 2, 6);  // Barra superior
-            pix.fillRectangle(7, 11, 2, 2); // Punto inferior
+            pix.fillRectangle(7, 3, 2, 6);
+            pix.fillRectangle(7, 11, 2, 2);
             
             texturaExclamacion = new Texture(pix);
             texturaExclamacion.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
@@ -106,8 +114,10 @@ public abstract class Pokemon {
     // PATRÓN TEMPLATE METHOD (GM-8)
     public final void actualizar(float delta, float velocidadFondo) {
         bajarConEscenario(delta, velocidadFondo);
-        ejecutarEstrategiaMovimiento(delta);
-        comportamientoEspecial(delta);
+        if (!this.capturando) {
+            ejecutarEstrategiaMovimiento(delta);
+            comportamientoEspecial(delta);
+        }
         actualizarAnimacion(delta);
         actualizarHitbox();
     }
@@ -133,29 +143,68 @@ public abstract class Pokemon {
         if (this.tiempoAlerta > 0f) {
             this.tiempoAlerta -= delta;
         }
+        if (this.tiempoGolpeado > 0f) {
+            this.tiempoGolpeado -= delta;
+        }
+        // Si fue capturado, se encoge muy rápido (en ~0.18 segundos llega a 0)
+        if (this.capturando) {
+            this.escalaCaptura -= delta * 5.5f;
+            if (this.escalaCaptura < 0f) {
+                this.escalaCaptura = 0f;
+            }
+        }
     }
 
     private void actualizarHitbox() {
-        if (this.colisionActiva) {
+        if (this.colisionActiva && !this.capturando) {
             this.hitbox.set(this.x, this.y, this.width, this.height);
         } else {
-            // Si aún no se materializa (ej. sombra de Kadabra), no tiene caja de colisión
             this.hitbox.set(this.x, this.y, 0f, 0f);
         }
     }
 
+    // Procesa el impacto de una Pokéball: retorna true si el golpe inició la captura definitiva
+    public boolean recibirImpactoPokeball() {
+        this.resistenciaCapturas--;
+        if (this.resistenciaCapturas <= 0) {
+            this.capturando = true;
+            this.colisionActiva = false;
+            this.estrategiaMovimiento = new MovimientoEstatico();
+            return true;
+        } else {
+            // Aún resiste: aplica filtro rojo durante 0.2 segundos
+            this.tiempoGolpeado = 0.2f;
+            return false;
+        }
+    }
+
+    public boolean capturaCompletada() {
+        return this.capturando && this.escalaCaptura <= 0f;
+    }
+
     public void draw(SpriteBatch batch) {
         if (this.framesDireccion != null) {
-            if (this.esShiny) {
+            // Selección de filtro de color según estado
+            if (this.capturando) {
+                // Tinte rojizo/brillante de absorción de la Pokéball
+                batch.setColor(1f, 0.4f, 0.4f, 1f);
+            } else if (this.tiempoGolpeado > 0f) {
+                // Filtro rojo intenso de daño cuando resiste un golpe (ej. Snorlax)
+                batch.setColor(1f, 0.15f, 0.15f, 1f);
+            } else if (this.esShiny) {
                 batch.setColor(1f, 0.9f, 0.4f, 1f);
             }
-            batch.draw(this.framesDireccion[this.direccionActual][this.frameActual], this.x, this.y, this.width, this.height);
-            if (this.esShiny) {
-                batch.setColor(Color.WHITE);
-            }
+
+            float wActual = this.width * this.escalaCaptura;
+            float hActual = this.height * this.escalaCaptura;
+            float drawX = this.x + (this.width - wActual) / 2f;
+            float drawY = this.y + (this.height - hActual) / 2f;
+
+            batch.draw(this.framesDireccion[this.direccionActual][this.frameActual], drawX, drawY, wActual, hActual);
+            batch.setColor(Color.WHITE);
         }
-        // Dibuja el signo de exclamación encima de la cabeza mientras dure la alerta
-        if (this.tiempoAlerta > 0f && texturaExclamacion != null) {
+
+        if (!this.capturando && this.tiempoAlerta > 0f && texturaExclamacion != null) {
             float tamanoIcono = 32f;
             float iconoX = this.x + (this.width / 2f) - (tamanoIcono / 2f);
             float iconoY = this.y + this.height + 4f;
@@ -169,7 +218,6 @@ public abstract class Pokemon {
     }
 
     public boolean salioDePantalla() {
-        // Sale por abajo (margen normal) o sale por arriba (con margen de 100px por los spawns iniciales)
         return (this.y + this.height) < 0 || this.y > (Gdx.graphics.getHeight() + 100f);
     }
 
@@ -182,7 +230,6 @@ public abstract class Pokemon {
     // GETTERS Y SETTERS ESTRICTOS (GM-5)
     public static Texture getTexturaExclamacion() { return texturaExclamacion; }
     public static void setTexturaExclamacion(Texture tex) { texturaExclamacion = tex; }
-
     public float getX() { return x; }
     public void setX(float x) { this.x = x; }
     public float getY() { return y; }
@@ -203,6 +250,14 @@ public abstract class Pokemon {
     public void setObjetivoY(float objetivoY) { this.objetivoY = objetivoY; }
     public float getTiempoAlerta() { return tiempoAlerta; }
     public void setTiempoAlerta(float tiempoAlerta) { this.tiempoAlerta = tiempoAlerta; }
+    public int getResistenciaCapturas() { return resistenciaCapturas; }
+    public void setResistenciaCapturas(int resistenciaCapturas) { this.resistenciaCapturas = resistenciaCapturas; }
+    public float getTiempoGolpeado() { return tiempoGolpeado; }
+    public void setTiempoGolpeado(float tiempoGolpeado) { this.tiempoGolpeado = tiempoGolpeado; }
+    public boolean isCapturando() { return capturando; }
+    public void setCapturando(boolean capturando) { this.capturando = capturando; }
+    public float getEscalaCaptura() { return escalaCaptura; }
+    public void setEscalaCaptura(float escalaCaptura) { this.escalaCaptura = escalaCaptura; }
     public Texture getHojaSprites() { return hojaSprites; }
     public void setHojaSprites(Texture hojaSprites) { this.hojaSprites = hojaSprites; }
     public TextureRegion[][] getFramesDireccion() { return framesDireccion; }
@@ -216,9 +271,7 @@ public abstract class Pokemon {
     public Rectangle getHitbox() { return hitbox; }
     public void setHitbox(Rectangle hitbox) { this.hitbox = hitbox; }
     public EstrategiaMovimiento getEstrategiaMovimiento() { return estrategiaMovimiento; }
-    public void setEstrategiaMovimiento(EstrategiaMovimiento estrategiaMovimiento) {
-        this.estrategiaMovimiento = estrategiaMovimiento;
-    }
+    public void setEstrategiaMovimiento(EstrategiaMovimiento estrategiaMovimiento) { this.estrategiaMovimiento = estrategiaMovimiento; }
     public boolean isColisionActiva() { return colisionActiva; }
     public void setColisionActiva(boolean colisionActiva) { this.colisionActiva = colisionActiva; }
 }

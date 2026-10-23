@@ -7,14 +7,14 @@ public class Rattata extends Pokemon {
     private float radioDeteccion;
 
     public Rattata(float startX, float startY) {
-        super(startX, startY, 80f, 80f, 140f, 25, "pokemones/rattata.png");
+        super(startX, startY, 80f, 80f, 180f, 25, "pokemones/rattata.png");
         this.yaSeAsusto = false;
         this.radioDeteccion = 220f; // Distancia en píxeles a la que detecta al entrenador
     }
 
     @Override
     protected void comportamientoEspecial(float delta) {
-        setVelocidad(getVelocidad() + (10f * delta));
+        setVelocidad(getVelocidad() + (20f * delta));
 
         if (!this.yaSeAsusto) {
             float centroRattataX = getX() + (getWidth() / 2f);
@@ -27,7 +27,7 @@ public class Rattata extends Pokemon {
             // Si el entrenador se acerca dentro del radio, se asusta y cambia su Strategy en tiempo real
             if (distancia <= this.radioDeteccion) {
                 setEstrategiaMovimiento(new MovimientoRecto());
-                setVelocidad(getVelocidad() * 1.6f);
+                setVelocidad(getVelocidad() * 1.75f);
                 setTiempoAlerta(0.6f); // Muestra el signo "!" encima durante 0.6 segundos
                 this.yaSeAsusto = true;
             }

@@ -9,57 +9,56 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
 import puppy.code.pokemones.Pokemon;
 
-public class Entrenador {
+public class Entrenador implements Colisionable {
     private float x;
     private float y;
-    private float width; 
-    private float height;
-    private float velocidad = 350f; 
-    private float escala = 4f; 
+    private float width = 96f;
+    private float height = 96f;
+    private float velocidad = 280f;
 
-    // SISTEMA DE VIDAS (Cambia vidasMaximas a 3, 5, etc. cuando quieras más corazones)
+    private Texture texQuieto;
+    private Texture texPasoIzq;
+    private Texture texPasoDer;
+
+    private float animTimer = 0f;
+    private int estadoPaso = 0;
+    private boolean estaQuieto = false;
+
     private int vidasMaximas;
     private int vidasActuales;
     private boolean herido;
     private float tiempoHerido;
     private Rectangle hitbox;
 
-    private Texture txQuieto;
-    private Texture txPasoIzq;
-    private Texture txPasoDer;
-    private Texture currentFrame;
-
-    private float animTimer = 0f;
-    private boolean pasoIzquierdoActivo = true;
-
     public Entrenador(float startX, float startY) {
+        this(startX, startY, "ethan");
+    }
+
+    public Entrenador(float startX, float startY, String nombrePersonaje) {
         this.x = startX;
         this.y = startY;
-
-        // Configuración inicial: 1 sola vida
-        this.vidasMaximas = 1;
-        this.vidasActuales = this.vidasMaximas;
+        this.vidasMaximas = 3;
+        this.vidasActuales = 3;
         this.herido = false;
         this.tiempoHerido = 0f;
 
-        this.txQuieto = new Texture(Gdx.files.internal("entrenador/ethan_quieto.png"));
-        this.txPasoIzq = new Texture(Gdx.files.internal("entrenador/ethan_paso_izq.png"));
-        this.txPasoDer = new Texture(Gdx.files.internal("entrenador/ethan_paso_der.png"));
+        String base = "entrenador/" + nombrePersonaje.toLowerCase();
+        this.texQuieto = new Texture(Gdx.files.internal(base + "_quieto.png"));
+        this.texPasoIzq = new Texture(Gdx.files.internal(base + "_paso_izq.png"));
+        this.texPasoDer = new Texture(Gdx.files.internal(base + "_paso_der.png"));
 
-        this.txQuieto.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
-        this.txPasoIzq.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
-        this.txPasoDer.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+        this.texQuieto.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+        this.texPasoIzq.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+        this.texPasoDer.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
 
-        this.width = this.txQuieto.getWidth() * this.escala;
-        this.height = this.txQuieto.getHeight() * this.escala;
-        
-        // Hitbox ligeramente más pequeña que el sprite para que los roces sean justos
-        this.hitbox = new Rectangle(this.x + 12f, this.y + 8f, this.width - 24f, this.height - 16f);
-        this.currentFrame = this.txPasoIzq;
+        // Ajustar el ancho proporcionalmente a la altura (96f) para evitar deformaciones
+        this.height = 96f;
+        this.width = this.height * ((float) this.texQuieto.getWidth() / this.texQuieto.getHeight());
+
+        this.hitbox = new Rectangle(this.x + 10f, this.y + 5f, this.width - 20f, this.height - 10f);
     }
 
     public void update(float delta, float velocidadFondo) {
-        // Control de invulnerabilidad temporal tras recibir golpe
         if (this.herido) {
             this.tiempoHerido -= delta;
             if (this.tiempoHerido <= 0f) {
@@ -67,56 +66,88 @@ public class Entrenador {
             }
         }
 
-        boolean frenando = false;
+        this.estaQuieto = false;
 
-        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+        // Si se presiona ABAJO, tiene prioridad absoluta y se anula cualquier otro movimiento
+        if (Gdx.input.isKeyPressed(Input.Keys.DOWN) || Gdx.input.isKeyPressed(Input.Keys.S)) {
             this.y -= velocidadFondo * delta;
-            frenando = true;
+            this.estaQuieto = true;
         } else {
-            if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
-                this.y += this.velocidad * delta;
-            }
-            if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && !Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+            // Movimiento lateral y hacia arriba solo si NO se está presionando abajo
+            if (Gdx.input.isKeyPressed(Input.Keys.LEFT) || Gdx.input.isKeyPressed(Input.Keys.A)) {
                 this.x -= this.velocidad * delta;
-            } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && !Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) || Gdx.input.isKeyPressed(Input.Keys.D)) {
                 this.x += this.velocidad * delta;
             }
-        }
-
-        if (this.x < 0) this.x = 0;
-        if (this.x + this.width > Gdx.graphics.getWidth()) this.x = Gdx.graphics.getWidth() - this.width;
-        if (this.y < 0) this.y = 0;
-        if (this.y + this.height > Gdx.graphics.getHeight()) this.y = Gdx.graphics.getHeight() - this.height;
-
-        // Actualizar posición de la hitbox
-        this.hitbox.setPosition(this.x + 12f, this.y + 8f);
-
-        if (frenando) {
-            this.currentFrame = this.txQuieto;
-            this.animTimer = 0f;
-        } else {
-            this.animTimer += delta;
-            if (this.animTimer > 0.2f) {
-                this.animTimer = 0f;
-                this.pasoIzquierdoActivo = !this.pasoIzquierdoActivo;
-                this.currentFrame = this.pasoIzquierdoActivo ? this.txPasoIzq : this.txPasoDer;
+            if (Gdx.input.isKeyPressed(Input.Keys.UP) || Gdx.input.isKeyPressed(Input.Keys.W)) {
+                this.y += (this.velocidad * 0.6f) * delta;
             }
         }
+
+        // Límites de pantalla (restringido a los 3/4 inferiores en Y)
+        if (this.x < 0) this.x = 0;
+        if (this.x + this.width > Gdx.graphics.getWidth()) {
+            this.x = Gdx.graphics.getWidth() - this.width;
+        }
+
+        float limiteSuperiorY = Gdx.graphics.getHeight() * 0.75f - this.height;
+        if (this.y < 0) this.y = 0;
+        if (this.y > limiteSuperiorY) {
+            this.y = limiteSuperiorY;
+        }
+
+        if (!this.estaQuieto) {
+            this.animTimer += delta;
+            if (this.animTimer >= 0.18f) {
+                this.animTimer = 0f;
+                this.estadoPaso = (this.estadoPaso == 0) ? 1 : 0;
+            }
+        }
+
+        this.hitbox.setPosition(this.x + 20f, this.y + 10f);
     }
 
+    public void draw(SpriteBatch batch) {
+        if (this.herido) {
+            // Parpadeo rojizo durante la invulnerabilidad temporal
+            if (((int) (this.tiempoHerido * 10)) % 2 == 0) {
+                batch.setColor(1f, 0.3f, 0.3f, 0.8f);
+            }
+        }
+
+        Texture actual;
+        if (this.estaQuieto) {
+            actual = this.texQuieto;
+        } else {
+            actual = (this.estadoPaso == 0) ? this.texPasoIzq : this.texPasoDer;
+        }
+
+        batch.draw(actual, this.x, this.y, this.width, this.height);
+        batch.setColor(Color.WHITE);
+    }
+
+    // Sobrecarga para choque directo con Pokemon que aplica el daño
     public boolean verificarColision(Pokemon pokemon) {
-        if (!this.herido && this.hitbox.overlaps(pokemon.getHitbox())) {
+        if (!this.herido && pokemon.isColisionActiva() && !pokemon.isCapturando() 
+                && this.hitbox.overlaps(pokemon.getHitbox())) {
             recibirDano();
             return true;
         }
         return false;
     }
 
+    // Implementación de la interfaz Colisionable (GM-4)
+    @Override
+    public boolean verificarColision(Colisionable otro) {
+        return !this.herido && this.hitbox.overlaps(otro.getHitbox());
+    }
+
     public void recibirDano() {
         if (!this.herido && this.vidasActuales > 0) {
             this.vidasActuales--;
             this.herido = true;
-            this.tiempoHerido = 1.5f; // 1.5 segundos de inmunidad tras un golpe
+            this.tiempoHerido = 1.2f;
         }
     }
 
@@ -124,24 +155,13 @@ public class Entrenador {
         return this.vidasActuales <= 0;
     }
 
-    public void draw(SpriteBatch batch) {
-        // Si está herido, parpadea en tono rojizo/transparente
-        if (this.herido) {
-            batch.setColor(1f, 0.4f, 0.4f, 0.7f);
-        }
-        batch.draw(this.currentFrame, this.x, this.y, this.width, this.height);
-        if (this.herido) {
-            batch.setColor(Color.WHITE);
-        }
-    }
-
     public void dispose() {
-        this.txQuieto.dispose();
-        this.txPasoIzq.dispose();
-        this.txPasoDer.dispose();
+        if (this.texQuieto != null) this.texQuieto.dispose();
+        if (this.texPasoIzq != null) this.texPasoIzq.dispose();
+        if (this.texPasoDer != null) this.texPasoDer.dispose();
     }
 
-    // GETTERS Y SETTERS ESTRICTOS (GM-5)
+    // Getters y Setters estrictos (GM-5)
     public float getX() { return x; }
     public void setX(float x) { this.x = x; }
     public float getY() { return y; }
@@ -152,33 +172,27 @@ public class Entrenador {
     public void setHeight(float height) { this.height = height; }
     public float getVelocidad() { return velocidad; }
     public void setVelocidad(float velocidad) { this.velocidad = velocidad; }
-    public float getEscala() { return escala; }
-    public void setEscala(float escala) { this.escala = escala; }
+    public Texture getTexQuieto() { return texQuieto; }
+    public void setTexQuieto(Texture texQuieto) { this.texQuieto = texQuieto; }
+    public Texture getTexPasoIzq() { return texPasoIzq; }
+    public void setTexPasoIzq(Texture texPasoIzq) { this.texPasoIzq = texPasoIzq; }
+    public Texture getTexPasoDer() { return texPasoDer; }
+    public void setTexPasoDer(Texture texPasoDer) { this.texPasoDer = texPasoDer; }
+    public float getAnimTimer() { return animTimer; }
+    public void setAnimTimer(float animTimer) { this.animTimer = animTimer; }
+    public int getEstadoPaso() { return estadoPaso; }
+    public void setEstadoPaso(int estadoPaso) { this.estadoPaso = estadoPaso; }
+    public boolean isEstaQuieto() { return estaQuieto; }
+    public void setEstaQuieto(boolean estaQuieto) { this.estaQuieto = estaQuieto; }
     public int getVidasMaximas() { return vidasMaximas; }
-    public void setVidasMaximas(int vidasMaximas) { 
-        this.vidasMaximas = vidasMaximas; 
-        if (this.vidasActuales > vidasMaximas) {
-            this.vidasActuales = vidasMaximas;
-        }
-    }
+    public void setVidasMaximas(int vidasMaximas) { this.vidasMaximas = vidasMaximas; }
     public int getVidasActuales() { return vidasActuales; }
     public void setVidasActuales(int vidasActuales) { this.vidasActuales = vidasActuales; }
     public boolean isHerido() { return herido; }
     public void setHerido(boolean herido) { this.herido = herido; }
     public float getTiempoHerido() { return tiempoHerido; }
     public void setTiempoHerido(float tiempoHerido) { this.tiempoHerido = tiempoHerido; }
+    @Override
     public Rectangle getHitbox() { return hitbox; }
     public void setHitbox(Rectangle hitbox) { this.hitbox = hitbox; }
-    public Texture getTxQuieto() { return txQuieto; }
-    public void setTxQuieto(Texture txQuieto) { this.txQuieto = txQuieto; }
-    public Texture getTxPasoIzq() { return txPasoIzq; }
-    public void setTxPasoIzq(Texture txPasoIzq) { this.txPasoIzq = txPasoIzq; }
-    public Texture getTxPasoDer() { return txPasoDer; }
-    public void setTxPasoDer(Texture txPasoDer) { this.txPasoDer = txPasoDer; }
-    public Texture getCurrentFrame() { return currentFrame; }
-    public void setCurrentFrame(Texture currentFrame) { this.currentFrame = currentFrame; }
-    public float getAnimTimer() { return animTimer; }
-    public void setAnimTimer(float animTimer) { this.animTimer = animTimer; }
-    public boolean isPasoIzquierdoActivo() { return pasoIzquierdoActivo; }
-    public void setPasoIzquierdoActivo(boolean pasoIzquierdoActivo) { this.pasoIzquierdoActivo = pasoIzquierdoActivo; }
 }

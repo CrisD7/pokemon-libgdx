@@ -88,6 +88,20 @@ public class GestorSpawns {
                       .conMultiplicadorVelocidad(multVel)
                       .build();
     }
+    
+    public void reiniciar() {
+        this.timerSpawn = 0f;
+        this.intervaloSpawn = 1.8f;
+    }
+
+    // Reduce el intervalo de aparición a medida que sube el puntaje (hasta un mínimo de 0.65 seg)
+    public void actualizarDificultadSegunPuntaje(int puntajeActual) {
+        float nuevoIntervalo = 1.8f - (puntajeActual / 150) * 0.15f;
+        if (nuevoIntervalo < 0.65f) {
+            nuevoIntervalo = 0.65f;
+        }
+        this.intervaloSpawn = nuevoIntervalo;
+    }
 
     // Getters y Setters estrictos (GM-5)
     public float getTimerSpawn() { return timerSpawn; }

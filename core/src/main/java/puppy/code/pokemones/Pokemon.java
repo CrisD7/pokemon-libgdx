@@ -11,7 +11,7 @@ import com.badlogic.gdx.math.Rectangle;
 import puppy.code.movimientos.EstrategiaMovimiento;
 import puppy.code.movimientos.MovimientoEstatico;
 
-public abstract class Pokemon {
+public abstract class Pokemon implements puppy.code.Colisionable {
     public static final int DIR_ABAJO = 0;
     public static final int DIR_ARRIBA = 1;
     public static final int DIR_IZQUIERDA = 2;
@@ -225,6 +225,11 @@ public abstract class Pokemon {
         if (this.hojaSprites != null) {
             this.hojaSprites.dispose();
         }
+    }
+    
+    @Override
+    public boolean verificarColision(puppy.code.Colisionable otro) {
+        return this.colisionActiva && !this.capturando && this.hitbox.overlaps(otro.getHitbox());
     }
 
     // GETTERS Y SETTERS ESTRICTOS (GM-5)

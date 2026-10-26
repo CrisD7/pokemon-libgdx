@@ -56,7 +56,7 @@ public class PantallaJuego implements Screen {
         this.fondoY1 = 0;
         this.fondoY2 = altoEscalado;
         
-        this.entrenador = new Entrenador(Gdx.graphics.getWidth() / 2f - 48f, 100f);
+        this.entrenador = new Entrenador(Gdx.graphics.getWidth() / 2f - 48f, 100f, this.game.getPersonajeSeleccionado());
         this.pokemonesActivos = new ArrayList<>();
         this.pokeballsActivas = new ArrayList<>();
         this.timerDisparo = 0f;
@@ -147,7 +147,7 @@ public class PantallaJuego implements Screen {
         }
 
         if (this.entrenador.estaDerrotado()) {
-            this.game.setScreen(new PantallaJuego(this.game));
+            this.game.setScreen(new PantallaGameOver(this.game, this.puntaje));
             this.dispose();
             return;
         }

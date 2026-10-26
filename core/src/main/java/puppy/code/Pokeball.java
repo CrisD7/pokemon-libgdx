@@ -8,7 +8,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 import puppy.code.pokemones.Pokemon;
 
-public class Pokeball {
+public class Pokeball implements Colisionable{
     private static Texture texturaGlobal;
     private static TextureRegion regionPokeball;
 
@@ -69,6 +69,11 @@ public class Pokeball {
             texturaGlobal.dispose();
             texturaGlobal = null;
         }
+    }
+    
+    @Override
+    public boolean verificarColision(Colisionable otro) {
+        return this.hitbox.overlaps(otro.getHitbox());
     }
 
     // Getters y Setters estrictos (GM-5)

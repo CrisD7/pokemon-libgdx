@@ -7,7 +7,9 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
+
 import puppy.code.pokemones.Pokemon;
+import puppy.code.pokemones.Snorunt;
 
 public class Entrenador implements Colisionable {
     private float x;
@@ -19,6 +21,7 @@ public class Entrenador implements Colisionable {
     private Texture texQuieto;
     private Texture texPasoIzq;
     private Texture texPasoDer;
+    private Texture texHielo;
 
     private float animTimer = 0f;
     private int estadoPaso = 0;
@@ -28,6 +31,10 @@ public class Entrenador implements Colisionable {
     private int vidasActuales;
     private boolean herido;
     private float tiempoHerido;
+    
+    private boolean congelado;
+    private float tiempoCongelado;
+    
     private Rectangle hitbox;
 
     public Entrenador(float startX, float startY) {
@@ -46,10 +53,12 @@ public class Entrenador implements Colisionable {
         this.texQuieto = new Texture(Gdx.files.internal(base + "_quieto.png"));
         this.texPasoIzq = new Texture(Gdx.files.internal(base + "_paso_izq.png"));
         this.texPasoDer = new Texture(Gdx.files.internal(base + "_paso_der.png"));
+        this.texHielo = new Texture(Gdx.files.internal("hielo.png"));
 
         this.texQuieto.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         this.texPasoIzq.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         this.texPasoDer.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+        this.texHielo.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
 
         // Ajustar el ancho proporcionalmente a la altura (96f) para evitar deformaciones
         this.height = 96f;
@@ -65,24 +74,35 @@ public class Entrenador implements Colisionable {
                 this.herido = false;
             }
         }
-
+        
+        if (this.congelado) {
+            this.tiempoCongelado -= delta;
+            if (this.tiempoCongelado <= 0f) {
+                this.congelado = false;
+            }
+        }
+        
         this.estaQuieto = false;
 
-        // Si se presiona ABAJO, tiene prioridad absoluta y se anula cualquier otro movimiento
-        if (Gdx.input.isKeyPressed(Input.Keys.DOWN) || Gdx.input.isKeyPressed(Input.Keys.S)) {
-            this.y -= velocidadFondo * delta;
-            this.estaQuieto = true;
+        if (!this.congelado) {
+            // Si se presiona ABAJO, tiene prioridad absoluta y se anula cualquier otro movimiento
+            if (Gdx.input.isKeyPressed(Input.Keys.DOWN) || Gdx.input.isKeyPressed(Input.Keys.S)) {
+                this.y -= velocidadFondo * delta;
+                this.estaQuieto = true;
+            } else {
+                // Movimiento lateral y hacia arriba solo si NO se está presionando abajo
+                if (Gdx.input.isKeyPressed(Input.Keys.LEFT) || Gdx.input.isKeyPressed(Input.Keys.A)) {
+                    this.x -= this.velocidad * delta;
+                }
+                if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) || Gdx.input.isKeyPressed(Input.Keys.D)) {
+                    this.x += this.velocidad * delta;
+                }
+                if (Gdx.input.isKeyPressed(Input.Keys.UP) || Gdx.input.isKeyPressed(Input.Keys.W)) {
+                    this.y += (this.velocidad * 0.6f) * delta;
+                }
+            }
         } else {
-            // Movimiento lateral y hacia arriba solo si NO se está presionando abajo
-            if (Gdx.input.isKeyPressed(Input.Keys.LEFT) || Gdx.input.isKeyPressed(Input.Keys.A)) {
-                this.x -= this.velocidad * delta;
-            }
-            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) || Gdx.input.isKeyPressed(Input.Keys.D)) {
-                this.x += this.velocidad * delta;
-            }
-            if (Gdx.input.isKeyPressed(Input.Keys.UP) || Gdx.input.isKeyPressed(Input.Keys.W)) {
-                this.y += (this.velocidad * 0.6f) * delta;
-            }
+            this.estaQuieto = true;
         }
 
         // Límites de pantalla (restringido a los 3/4 inferiores en Y)
@@ -125,14 +145,24 @@ public class Entrenador implements Colisionable {
 
         batch.draw(actual, this.x, this.y, this.width, this.height);
         batch.setColor(Color.WHITE);
+        
+        if (this.congelado) {
+            batch.setColor(1f, 1f, 1f, 0.8f); // 80% de opacidad
+            batch.draw(this.texHielo, this.x - 10f, this.y - 10f, this.width + 20f, this.height + 20f);
+            batch.setColor(Color.WHITE);
+        }
     }
 
     // Sobrecarga para choque directo con Pokemon que aplica el daño
     public boolean verificarColision(Pokemon pokemon) {
         if (!this.herido && pokemon.isColisionActiva() && !pokemon.isCapturando() 
                 && this.hitbox.overlaps(pokemon.getHitbox())) {
-            recibirDano();
-            return true;
+        	if (pokemon instanceof Snorunt) {
+                recibirCongelamiento(2.15f);
+            } else {
+                recibirDano();
+            }
+        	return true;
         }
         return false;
     }
@@ -150,6 +180,13 @@ public class Entrenador implements Colisionable {
             this.tiempoHerido = 1.2f;
         }
     }
+    
+    public void recibirCongelamiento(float tiempo) {
+        if (!this.congelado && !this.herido) {
+            this.congelado = true;
+            this.tiempoCongelado = tiempo;
+        }
+    }
 
     public boolean estaDerrotado() {
         return this.vidasActuales <= 0;
@@ -159,6 +196,7 @@ public class Entrenador implements Colisionable {
         if (this.texQuieto != null) this.texQuieto.dispose();
         if (this.texPasoIzq != null) this.texPasoIzq.dispose();
         if (this.texPasoDer != null) this.texPasoDer.dispose();
+        if (this.texHielo != null) this.texHielo.dispose();
     }
 
     // Getters y Setters estrictos (GM-5)
@@ -192,6 +230,10 @@ public class Entrenador implements Colisionable {
     public void setHerido(boolean herido) { this.herido = herido; }
     public float getTiempoHerido() { return tiempoHerido; }
     public void setTiempoHerido(float tiempoHerido) { this.tiempoHerido = tiempoHerido; }
+    public boolean isCongelado() { return congelado; }
+    public void setCongelado(boolean congelado) { this.congelado = congelado; }
+    public float getTiempoCongelado() { return tiempoCongelado; }
+    public void setTiempoCongelado(float tiempoCongelado) { this.tiempoCongelado = tiempoCongelado; }
     @Override
     public Rectangle getHitbox() { return hitbox; }
     public void setHitbox(Rectangle hitbox) { this.hitbox = hitbox; }

@@ -1,8 +1,10 @@
 package puppy.code.spawns;
 
 import java.util.ArrayList;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.MathUtils;
+
 import puppy.code.movimientos.MovimientoEstatico;
 import puppy.code.movimientos.MovimientoRecto;
 import puppy.code.movimientos.MovimientoZigZag;
@@ -11,6 +13,7 @@ import puppy.code.pokemones.Kadabra;
 import puppy.code.pokemones.Pokemon;
 import puppy.code.pokemones.Rattata;
 import puppy.code.pokemones.Snorlax;
+import puppy.code.pokemones.Snorunt;
 
 public class GestorSpawns {
     // Instancia única estática y privada (GM-6)
@@ -44,11 +47,12 @@ public class GestorSpawns {
     }
 
     private void inicializarCatalogoPorDefecto() {
-        // 45% Caterpie, 25% Rattata, 15% Kadabra, 15% Snorlax
+        // 45% Caterpie, 25% Rattata, 15% Kadabra, 15% Snorlax, 20% Snorunt
         registrarSpawn(new EntradaSpawn(45, (x, y) -> new Caterpie(x, y), () -> new MovimientoRecto()));
         registrarSpawn(new EntradaSpawn(25, (x, y) -> new Rattata(x, y), () -> new MovimientoZigZag()));
         registrarSpawn(new EntradaSpawn(15, (x, y) -> new Kadabra(x, y), () -> new MovimientoEstatico()));
         registrarSpawn(new EntradaSpawn(15, (x, y) -> new Snorlax(x, y), () -> new MovimientoRecto()));
+        registrarSpawn(new EntradaSpawn(20, (x, y) -> new Snorunt(x, y), () -> new MovimientoRecto()));
     }
 
     public Pokemon intentarGenerarPokemon(float delta) {

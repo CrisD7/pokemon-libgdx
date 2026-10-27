@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.audio.Sound;
 
 import puppy.code.pokemones.Pokemon;
 import puppy.code.pokemones.Snorunt;
@@ -22,6 +23,9 @@ public class Entrenador implements Colisionable {
     private Texture texPasoIzq;
     private Texture texPasoDer;
     private Texture texHielo;
+    private Sound sonidoCurar;
+    private Sound sonidoCongelar;
+    private Sound sonidoGolpe;
 
     private float animTimer = 0f;
     private int estadoPaso = 0;
@@ -48,6 +52,9 @@ public class Entrenador implements Colisionable {
         this.vidasActuales = 3;
         this.herido = false;
         this.tiempoHerido = 0f;
+        this.sonidoCurar = Gdx.audio.newSound(Gdx.files.internal("sonidoRevivir.wav"));
+        this.sonidoCongelar = Gdx.audio.newSound(Gdx.files.internal("sonidoCongelado.wav"));
+        this.sonidoGolpe = Gdx.audio.newSound(Gdx.files.internal("perderVida.wav"));
 
         String base = "entrenador/" + nombrePersonaje.toLowerCase();
         this.texQuieto = new Texture(Gdx.files.internal(base + "_quieto.png"));
@@ -175,6 +182,7 @@ public class Entrenador implements Colisionable {
 
     public void recibirDano() {
         if (!this.herido && this.vidasActuales > 0) {
+        	this.sonidoGolpe.play(0.65f);
             this.vidasActuales--;
             this.herido = true;
             this.tiempoHerido = 1.2f;
@@ -183,6 +191,7 @@ public class Entrenador implements Colisionable {
     
     public void recibirCongelamiento(float tiempo) {
         if (!this.congelado && !this.herido) {
+        	this.sonidoCongelar.play(0.55f);
             this.congelado = true;
             this.tiempoCongelado = tiempo;
         }
@@ -192,11 +201,25 @@ public class Entrenador implements Colisionable {
         return this.vidasActuales <= 0;
     }
 
+    public void recuperarVida(boolean alMaximo) {
+    	this.sonidoCurar.play(0.7f);
+        if (alMaximo) {
+            this.vidasActuales = this.vidasMaximas;
+        } else {
+            if (this.vidasActuales < this.vidasMaximas) {
+                this.vidasActuales++;
+            }
+        }
+    }
+    
     public void dispose() {
         if (this.texQuieto != null) this.texQuieto.dispose();
         if (this.texPasoIzq != null) this.texPasoIzq.dispose();
         if (this.texPasoDer != null) this.texPasoDer.dispose();
         if (this.texHielo != null) this.texHielo.dispose();
+        if (this.sonidoGolpe != null) this.sonidoGolpe.dispose();
+        if (this.sonidoCongelar != null) this.sonidoCongelar.dispose();
+        if (this.sonidoCurar != null) this.sonidoCurar.dispose();
     }
 
     // Getters y Setters estrictos (GM-5)

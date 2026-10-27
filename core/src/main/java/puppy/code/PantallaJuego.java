@@ -1,6 +1,8 @@
 package puppy.code;
 
 import java.util.ArrayList;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.utils.Array;
 import java.util.Iterator;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -32,6 +34,8 @@ public class PantallaJuego implements Screen {
     private float timerDisparo;
     private float tiempoRecargaDisparo = 0.70f; // Cooldown ligeramente mayor entre Pokéballs
     private int puntaje;
+    private Array<Revivir> reviviresActivos;
+    private float timerRevivires;
 
     public PantallaJuego(Pokewalk game) {
         this.game = game;
@@ -65,6 +69,8 @@ public class PantallaJuego implements Screen {
         this.pokeballsActivas = new ArrayList<>();
         this.timerDisparo = 0f;
         this.puntaje = 0;
+        this.reviviresActivos = new Array<>();
+        this.timerRevivires = 0f;
     }
 
     @Override
@@ -157,6 +163,36 @@ public class PantallaJuego implements Screen {
                 iterPoke.remove();
             }
         }
+        
+        // Logica de Revivir (Recuperar Vidas)
+        this.timerRevivires += delta;
+        if (this.timerRevivires >= 3.5f) { 
+            this.timerRevivires = 0f;
+            if (MathUtils.random(1, 100) <= 15) { 
+                boolean esMax = MathUtils.random(1, 100) <= 10; 
+                float posX = MathUtils.random(0, anchoEscalado - 48f);
+                float posY = altoEscalado + 10f;
+                this.reviviresActivos.add(new Revivir(posX, posY, esMax));
+            }
+        }
+
+        for (int i = this.reviviresActivos.size - 1; i >= 0; i--) {
+            Revivir rev = this.reviviresActivos.get(i);
+            
+            rev.update(delta, this.velocidadFondo);
+
+            if (rev.isExpirada() || rev.salioDePantalla()) {
+                rev.dispose();
+                this.reviviresActivos.removeIndex(i);
+                continue;
+            }
+            
+            if (this.entrenador.getHitbox().overlaps(rev.getHitbox())) {
+                this.entrenador.recuperarVida(rev.isMaxRevivir());
+                rev.dispose();
+                this.reviviresActivos.removeIndex(i);
+            }
+        }
 
         if (this.entrenador.estaDerrotado()) {
             this.game.setScreen(new PantallaGameOver(this.game, this.puntaje));
@@ -177,6 +213,10 @@ public class PantallaJuego implements Screen {
         }
         for (Pokeball ball : this.pokeballsActivas) {
             ball.draw(this.game.getBatch());
+        }
+        
+        for (Revivir r : this.reviviresActivos) {
+            r.draw(this.game.getBatch());
         }
         
         this.entrenador.draw(this.game.getBatch());
@@ -237,6 +277,9 @@ public class PantallaJuego implements Screen {
         for (Pokemon p : this.pokemonesActivos) {
             p.dispose();
         }
+        for (Revivir r : this.reviviresActivos) {
+            r.dispose();
+        }
     }
     
     private void gestionarVolumen() {
@@ -287,4 +330,8 @@ public class PantallaJuego implements Screen {
     public void setTiempoRecargaDisparo(float tiempoRecargaDisparo) { this.tiempoRecargaDisparo = tiempoRecargaDisparo; }
     public int getPuntaje() { return puntaje; }
     public void setPuntaje(int puntaje) { this.puntaje = puntaje; }
+    public Array<Revivir> getReviviresActivos() { return reviviresActivos; }
+    public void setReviviresActivos(Array<Revivir> reviviresActivos) { this.reviviresActivos = reviviresActivos; }
+    public float getTimerRevivires() { return timerRevivires; }
+    public void setTimerRevivires(float timerRevivires) { this.timerRevivires = timerRevivires; }
 }

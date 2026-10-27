@@ -23,6 +23,7 @@ public class PantallaMenu implements Screen {
     private Texture texCardEthan;
     private Texture texCardLyra;
     private Texture texCardSilver;
+    private Texture texCandado;
     private BitmapFont fuenteTexto;
 
     private float fondoY1;
@@ -50,6 +51,7 @@ public class PantallaMenu implements Screen {
         this.texCardEthan = cargarTexturaSegura("card_ethan.png");
         this.texCardLyra = cargarTexturaSegura("card_lyra.png");
         this.texCardSilver = cargarTexturaSegura("card_silver.png");
+        this.texCandado = cargarTexturaSegura("candado.png");
 
         float altoEscalado = Gdx.graphics.getWidth() * ((float) this.texFondo.getHeight() / this.texFondo.getWidth());
         this.fondoY1 = 0f;
@@ -148,12 +150,20 @@ public class PantallaMenu implements Screen {
     }
 
     private void renderizarSubmenuPersonajes(float delta, float ancho, float alto) {
-        float mouseX = Gdx.input.getX();
+    	float mouseX = Gdx.input.getX();
         float mouseY = alto - Gdx.input.getY();
+        
+        int record = this.game.getHighScore();
+        boolean lyraDesbloqueada = record >= 500;
+        boolean silverDesbloqueado = record >= 1000;
 
-        boolean hoverEthan = this.boundsEthan.contains(mouseX, mouseY);
-        boolean hoverLyra = this.boundsLyra.contains(mouseX, mouseY);
-        boolean hoverSilver = this.boundsSilver.contains(mouseX, mouseY);
+        boolean hoverRealEthan = this.boundsEthan.contains(mouseX, mouseY);
+        boolean hoverRealLyra = this.boundsLyra.contains(mouseX, mouseY);
+        boolean hoverRealSilver = this.boundsSilver.contains(mouseX, mouseY);
+        
+        boolean hoverEthan = hoverRealEthan;
+        boolean hoverLyra = lyraDesbloqueada && hoverRealLyra;
+        boolean hoverSilver = silverDesbloqueado && hoverRealSilver;
 
         this.escalaEthan += ((hoverEthan ? 1.12f : 1.0f) - this.escalaEthan) * 12f * delta;
         this.escalaLyra += ((hoverLyra ? 1.12f : 1.0f) - this.escalaLyra) * 12f * delta;
@@ -163,9 +173,38 @@ public class PantallaMenu implements Screen {
         this.fuenteTexto.draw(this.game.getBatch(), "ELIGE TU ENTRENADOR", ancho / 2f - 160f, alto - 90f);
         this.fuenteTexto.setColor(Color.WHITE);
 
-        if (this.texCardEthan != null) dibujarTarjeta(this.texCardEthan, this.boundsEthan, this.escalaEthan, hoverEthan);
-        if (this.texCardLyra != null) dibujarTarjeta(this.texCardLyra, this.boundsLyra, this.escalaLyra, hoverLyra);
-        if (this.texCardSilver != null) dibujarTarjeta(this.texCardSilver, this.boundsSilver, this.escalaSilver, hoverSilver);
+        if (this.texCardEthan != null) dibujarTarjeta(this.texCardEthan, this.boundsEthan, this.escalaEthan, hoverEthan, true);
+        if (this.texCardLyra != null) dibujarTarjeta(this.texCardLyra, this.boundsLyra, this.escalaLyra, hoverLyra, lyraDesbloqueada);
+        if (this.texCardSilver != null) dibujarTarjeta(this.texCardSilver, this.boundsSilver, this.escalaSilver, hoverSilver, silverDesbloqueado);
+        
+        float candadoSize = 64f;
+        this.fuenteTexto.getData().setScale(1.05f); 
+        this.fuenteTexto.setColor(new Color(1f, 0.4f, 0.4f, 1f));
+        
+        if (!lyraDesbloqueada) {
+            if (this.texCandado != null) {
+                float candadoX = this.boundsLyra.x + (this.boundsLyra.width / 2f) - (candadoSize / 2f);
+                float candadoY = this.boundsLyra.y + (this.boundsLyra.height / 2f) - (candadoSize / 2f) + 25f;
+                this.game.getBatch().draw(this.texCandado, candadoX, candadoY, candadoSize, candadoSize);
+            }
+            if (hoverRealLyra) {
+                this.fuenteTexto.draw(this.game.getBatch(), "Se desbloquea al\nalcanzar 500 pts.", this.boundsLyra.x + 12f, this.boundsLyra.y + 65f);
+            }
+        }
+        
+        if (!silverDesbloqueado) {
+            if (this.texCandado != null) {
+                float candadoX = this.boundsSilver.x + (this.boundsSilver.width / 2f) - (candadoSize / 2f);
+                float candadoY = this.boundsSilver.y + (this.boundsSilver.height / 2f) - (candadoSize / 2f) + 25f;
+                this.game.getBatch().draw(this.texCandado, candadoX, candadoY, candadoSize, candadoSize);
+            }
+            if (hoverRealSilver) {
+                this.fuenteTexto.draw(this.game.getBatch(), "Se desbloquea al\nalcanzar 1000 pts.", this.boundsSilver.x + 5f, this.boundsSilver.y + 65f);
+            }
+        }
+        
+        this.fuenteTexto.getData().setScale(2.0f);
+        this.fuenteTexto.setColor(Color.WHITE);
 
         this.fuenteTexto.draw(this.game.getBatch(), "[ESC] Volver atras", ancho / 2f - 120f, 85f);
 
@@ -184,13 +223,17 @@ public class PantallaMenu implements Screen {
         this.dispose();
     }
 
-    private void dibujarTarjeta(Texture textura, Rectangle base, float escala, boolean enHover) {
+    private void dibujarTarjeta(Texture textura, Rectangle base, float escala, boolean enHover, boolean desbloqueado) {
         float w = base.width * escala;
         float h = base.height * escala;
         float x = base.x - (w - base.width) / 2f;
         float y = base.y - (h - base.height) / 2f;
 
-        if (enHover) {
+        if (!desbloqueado) {
+            this.game.getBatch().setColor(0.3f, 0.3f, 0.3f, 0.9f);
+            this.game.getBatch().draw(textura, x, y, w, h);
+            this.game.getBatch().setColor(Color.WHITE);
+        } else if (enHover) {
             this.game.getBatch().setColor(0.75f, 0.95f, 1.0f, 1.0f);
             this.game.getBatch().draw(textura, x, y, w, h);
 
@@ -220,10 +263,11 @@ public class PantallaMenu implements Screen {
         if (this.texCardEthan != null) this.texCardEthan.dispose();
         if (this.texCardLyra != null) this.texCardLyra.dispose();
         if (this.texCardSilver != null) this.texCardSilver.dispose();
+        if (this.texCandado != null) this.texCandado.dispose();
         this.fuenteTexto.dispose();
     }
 
-    // Getters y Setters estrictos (GM-5)
+ // Getters y Setters estrictos (GM-5)
     public Pokewalk getGame() { return game; }
     public void setGame(Pokewalk game) { this.game = game; }
     public int getEstadoMenu() { return estadoMenu; }
@@ -240,6 +284,8 @@ public class PantallaMenu implements Screen {
     public void setTexCardLyra(Texture texCardLyra) { this.texCardLyra = texCardLyra; }
     public Texture getTexCardSilver() { return texCardSilver; }
     public void setTexCardSilver(Texture texCardSilver) { this.texCardSilver = texCardSilver; }
+    public Texture getTexCandado() { return texCandado; }
+    public void setTexCandado(Texture texCandado) { this.texCandado = texCandado; }
     public BitmapFont getFuenteTexto() { return fuenteTexto; }
     public void setFuenteTexto(BitmapFont fuenteTexto) { this.fuenteTexto = fuenteTexto; }
     public float getFondoY1() { return fondoY1; }

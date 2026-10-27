@@ -126,6 +126,13 @@ public class PantallaJuego implements Screen {
                         // Si el golpe vence la resistencia del Pokémon, suma puntos e inicia encogimiento
                         if (p.recibirImpactoPokeball()) {
                             this.puntaje += p.getPuntosPorCaptura();
+                            
+                            if (p instanceof puppy.code.pokemones.Snorlax) {
+                                com.badlogic.gdx.Preferences prefs = Gdx.app.getPreferences("PokewalkPrefs");
+                                int capturados = prefs.getInteger("snorlaxCapturados", 0);
+                                prefs.putInteger("snorlaxCapturados", capturados + 1);
+                                prefs.flush();
+                            }
                         }
                         break;
                     }

@@ -49,7 +49,11 @@ public class PantallaJuego implements Screen {
         // Carga y reproducción de música de fondo en bucle
         this.musicaFondo = Gdx.audio.newMusic(Gdx.files.internal("musica_fondo.wav"));
         this.musicaFondo.setLooping(true);
-        this.musicaFondo.setVolume(0.3f);
+        
+        com.badlogic.gdx.Preferences prefs = Gdx.app.getPreferences("PokewalkPrefs");
+        float volumenGuardado = prefs.getFloat("volumenMusica", 0.3f);
+        this.musicaFondo.setVolume(volumenGuardado);
+        
         this.musicaFondo.play();
         
         float altoEscalado = Gdx.graphics.getWidth() * ((float) this.texturaFondo.getHeight() / this.texturaFondo.getWidth());
@@ -82,6 +86,7 @@ public class PantallaJuego implements Screen {
         // 2. Actualizar entrenador y disparo
         this.entrenador.update(delta, this.velocidadFondo);
         actualizarDisparo(delta);
+        gestionarVolumen();
 
         // 3. Spawnear nuevos Pokémon
         Pokemon nuevo = GestorSpawns.getInstancia().intentarGenerarPokemon(delta);
@@ -180,10 +185,11 @@ public class PantallaJuego implements Screen {
     }
 
     private void actualizarDisparo(float delta) {
-        if (this.timerDisparo > 0f) {
+    	if (this.timerDisparo > 0f) {
             this.timerDisparo -= delta;
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) && this.timerDisparo <= 0f) {
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) && this.timerDisparo <= 0f && !this.entrenador.isCongelado()) {
             float centroX = this.entrenador.getX() + (this.entrenador.getWidth() / 2f);
             float frenteY = this.entrenador.getY() + this.entrenador.getHeight() - 10f;
             this.pokeballsActivas.add(new Pokeball(centroX, frenteY));
@@ -231,6 +237,25 @@ public class PantallaJuego implements Screen {
         for (Pokemon p : this.pokemonesActivos) {
             p.dispose();
         }
+    }
+    
+    private void gestionarVolumen() {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.PLUS) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ADD)) {
+            ajustarVolumen(0.1f);
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.MINUS) || Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_SUBTRACT)) {
+            ajustarVolumen(-0.1f);
+        }
+    }
+
+    private void ajustarVolumen(float variacion) {
+        float volumenActual = this.musicaFondo.getVolume();
+        float nuevoVolumen = Math.max(0f, Math.min(1f, volumenActual + variacion)); 
+        
+        this.musicaFondo.setVolume(nuevoVolumen);
+        
+        com.badlogic.gdx.Preferences prefs = Gdx.app.getPreferences("PokewalkPrefs");
+        prefs.putFloat("volumenMusica", nuevoVolumen);
+        prefs.flush();
     }
 
     // Getters y Setters estrictos (GM-5)

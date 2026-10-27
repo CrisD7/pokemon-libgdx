@@ -55,29 +55,33 @@ public class GestorSpawns {
         registrarSpawn(new EntradaSpawn(20, (x, y) -> new Snorunt(x, y), () -> new MovimientoRecto()));
     }
 
-    public Pokemon intentarGenerarPokemon(float delta) {
+    public Pokemon intentarGenerarPokemon(float delta, boolean esNevado) {
         this.timerSpawn += delta;
         if (this.timerSpawn >= this.intervaloSpawn) {
             this.timerSpawn = 0f;
-            return construirPokemonAleatorio();
+            return construirPokemonAleatorio(esNevado);
         }
         return null;
     }
 
-    private Pokemon construirPokemonAleatorio() {
+    private Pokemon construirPokemonAleatorio(boolean esNevado) {
         float posX = MathUtils.random(40f, Gdx.graphics.getWidth() - 120f);
         float posY = Gdx.graphics.getHeight() + 20f;
 
-        // Selección ponderada dinámica sin condicionales por especie
-        int tirada = MathUtils.random(1, this.pesoTotal);
-        int acumulado = 0;
         EntradaSpawn seleccionada = this.catalogoSpawns.get(0);
 
-        for (EntradaSpawn entrada : this.catalogoSpawns) {
-            acumulado += entrada.getPesoProbabilidad();
-            if (tirada <= acumulado) {
-                seleccionada = entrada;
-                break;
+        if (esNevado && MathUtils.random(1, 100) <= 45) {
+            seleccionada = this.catalogoSpawns.get(4); 
+        } else {
+            int tirada = MathUtils.random(1, this.pesoTotal);
+            int acumulado = 0;
+            
+            for (EntradaSpawn entrada : this.catalogoSpawns) {
+                acumulado += entrada.getPesoProbabilidad();
+                if (tirada <= acumulado) {
+                    seleccionada = entrada;
+                    break;
+                }
             }
         }
 

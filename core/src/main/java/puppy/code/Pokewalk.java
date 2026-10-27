@@ -11,8 +11,11 @@ public class Pokewalk extends Game {
     @Override
     public void create() {
         this.batch = new SpriteBatch();
-        this.highScore = 0;
-        this.personajeSeleccionado = "ethan"; // Personaje por defecto
+        
+        com.badlogic.gdx.Preferences prefs = com.badlogic.gdx.Gdx.app.getPreferences("PokewalkPrefs");
+        this.highScore = prefs.getInteger("highScore", 0);
+        
+        this.personajeSeleccionado = "ethan";
         this.setScreen(new PantallaMenu(this));
     }
 
@@ -31,6 +34,10 @@ public class Pokewalk extends Game {
     public void actualizarHighScore(int nuevoPuntaje) {
         if (nuevoPuntaje > this.highScore) {
             this.highScore = nuevoPuntaje;
+            
+            com.badlogic.gdx.Preferences prefs = com.badlogic.gdx.Gdx.app.getPreferences("PokewalkPrefs");
+            prefs.putInteger("highScore", this.highScore);
+            prefs.flush();
         }
     }
 

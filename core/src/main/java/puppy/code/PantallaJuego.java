@@ -36,12 +36,19 @@ public class PantallaJuego implements Screen {
     private int puntaje;
     private Array<Revivir> reviviresActivos;
     private float timerRevivires;
+    
+    private String[] rutasBiomas = {"fondo_cesped.png", "fondo_desierto.png", "fondo_nevado.png"};
+    private int umbralBiomaActual;
+    private int indiceBiomaActual = -1;
+    private Texture texturaFondoAnterior;
+    private boolean enTransicion = false;
+    private float alphaTransicion = 0f;
 
     public PantallaJuego(Pokewalk game) {
         this.game = game;
         
-        this.texturaFondo = new Texture(Gdx.files.internal("fondo_cesped.png"));
-        this.texturaFondo.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+        this.umbralBiomaActual = 0;
+        cambiarBiomaAleatorio();
         
         this.texturaCorazon = new Texture(Gdx.files.internal("corazon.png"));
         this.texturaCorazon.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
@@ -93,9 +100,17 @@ public class PantallaJuego implements Screen {
         this.entrenador.update(delta, this.velocidadFondo);
         actualizarDisparo(delta);
         gestionarVolumen();
+        
+        int umbralCalculado = this.puntaje / 1000;
+        if (umbralCalculado > this.umbralBiomaActual) {
+            this.umbralBiomaActual = umbralCalculado;
+            cambiarBiomaAleatorio();
+        }
 
         // 3. Spawnear nuevos Pokémon
-        Pokemon nuevo = GestorSpawns.getInstancia().intentarGenerarPokemon(delta);
+        boolean biomaNevado = (this.indiceBiomaActual == 2); 
+        Pokemon nuevo = GestorSpawns.getInstancia().intentarGenerarPokemon(delta, biomaNevado);
+        
         if (nuevo != null) {
             this.pokemonesActivos.add(nuevo);
         }
@@ -168,11 +183,14 @@ public class PantallaJuego implements Screen {
         this.timerRevivires += delta;
         if (this.timerRevivires >= 3.5f) { 
             this.timerRevivires = 0f;
-            if (MathUtils.random(1, 100) <= 15) { 
-                boolean esMax = MathUtils.random(1, 100) <= 10; 
-                float posX = MathUtils.random(0, anchoEscalado - 48f);
-                float posY = altoEscalado + 10f;
-                this.reviviresActivos.add(new Revivir(posX, posY, esMax));
+            
+            if (this.entrenador.getVidasActuales() < this.entrenador.getVidasMaximas()) {
+                if (MathUtils.random(1, 100) <= 15) { 
+                    boolean esMax = MathUtils.random(1, 100) <= 10; 
+                    float posX = MathUtils.random(0, anchoEscalado - 48f);
+                    float posY = altoEscalado + 10f;
+                    this.reviviresActivos.add(new Revivir(posX, posY, esMax));
+                }
             }
         }
 
@@ -200,13 +218,37 @@ public class PantallaJuego implements Screen {
             return;
         }
 
+        if (this.enTransicion) {
+            this.alphaTransicion += delta * 0.5f;
+            if (this.alphaTransicion >= 1f) {
+                this.alphaTransicion = 1f;
+                this.enTransicion = false;
+                if (this.texturaFondoAnterior != null) {
+                    this.texturaFondoAnterior.dispose();
+                    this.texturaFondoAnterior = null;
+                }
+            }
+        }
+
         // 6. Dibujar todo
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         
         this.game.getBatch().begin();
-        this.game.getBatch().draw(this.texturaFondo, 0, this.fondoY1, anchoEscalado, altoEscalado);
-        this.game.getBatch().draw(this.texturaFondo, 0, this.fondoY2, anchoEscalado, altoEscalado);
+        
+        if (this.enTransicion && this.texturaFondoAnterior != null) {
+            this.game.getBatch().draw(this.texturaFondoAnterior, 0, this.fondoY1, anchoEscalado, altoEscalado);
+            this.game.getBatch().draw(this.texturaFondoAnterior, 0, this.fondoY2, anchoEscalado, altoEscalado);
+            
+            this.game.getBatch().setColor(1f, 1f, 1f, this.alphaTransicion);
+            this.game.getBatch().draw(this.texturaFondo, 0, this.fondoY1, anchoEscalado, altoEscalado);
+            this.game.getBatch().draw(this.texturaFondo, 0, this.fondoY2, anchoEscalado, altoEscalado);
+            
+            this.game.getBatch().setColor(Color.WHITE); 
+        } else {
+            this.game.getBatch().draw(this.texturaFondo, 0, this.fondoY1, anchoEscalado, altoEscalado);
+            this.game.getBatch().draw(this.texturaFondo, 0, this.fondoY2, anchoEscalado, altoEscalado);
+        }
         
         for (Pokemon p : this.pokemonesActivos) {
             p.draw(this.game.getBatch());
@@ -273,6 +315,7 @@ public class PantallaJuego implements Screen {
             this.musicaFondo.stop();
             this.musicaFondo.dispose();
         }
+        if (this.texturaFondoAnterior != null) this.texturaFondoAnterior.dispose();
         this.entrenador.dispose();
         for (Pokemon p : this.pokemonesActivos) {
             p.dispose();
@@ -299,6 +342,24 @@ public class PantallaJuego implements Screen {
         com.badlogic.gdx.Preferences prefs = Gdx.app.getPreferences("PokewalkPrefs");
         prefs.putFloat("volumenMusica", nuevoVolumen);
         prefs.flush();
+    }
+    
+    private void cambiarBiomaAleatorio() {
+        if (this.texturaFondo != null) {
+            this.texturaFondoAnterior = this.texturaFondo;
+            this.enTransicion = true;
+            this.alphaTransicion = 0f;
+        }
+        
+        int nuevoIndice;
+        do {
+            nuevoIndice = com.badlogic.gdx.math.MathUtils.random(0, this.rutasBiomas.length - 1);
+        } while (nuevoIndice == this.indiceBiomaActual); 
+        
+        this.indiceBiomaActual = nuevoIndice; 
+        
+        this.texturaFondo = new Texture(Gdx.files.internal(this.rutasBiomas[this.indiceBiomaActual]));
+        this.texturaFondo.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
     }
 
     // Getters y Setters estrictos (GM-5)

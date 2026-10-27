@@ -14,6 +14,7 @@ import puppy.code.pokemones.Pokemon;
 import puppy.code.pokemones.Rattata;
 import puppy.code.pokemones.Snorlax;
 import puppy.code.pokemones.Snorunt;
+import puppy.code.pokemones.Glalie;
 
 public class GestorSpawns {
     // Instancia única estática y privada (GM-6)
@@ -53,6 +54,7 @@ public class GestorSpawns {
         registrarSpawn(new EntradaSpawn(15, (x, y) -> new Kadabra(x, y), () -> new MovimientoEstatico()));
         registrarSpawn(new EntradaSpawn(15, (x, y) -> new Snorlax(x, y), () -> new MovimientoRecto()));
         registrarSpawn(new EntradaSpawn(20, (x, y) -> new Snorunt(x, y), () -> new MovimientoRecto()));
+        registrarSpawn(new EntradaSpawn(0, (x, y) -> new Glalie(x, y), () -> new MovimientoRecto()));
     }
 
     public Pokemon intentarGenerarPokemon(float delta, boolean esNevado) {
@@ -68,11 +70,18 @@ public class GestorSpawns {
         float posX = MathUtils.random(40f, Gdx.graphics.getWidth() - 120f);
         float posY = Gdx.graphics.getHeight() + 20f;
 
-        EntradaSpawn seleccionada = this.catalogoSpawns.get(0);
+        EntradaSpawn seleccionada = null;
 
-        if (esNevado && MathUtils.random(1, 100) <= 45) {
-            seleccionada = this.catalogoSpawns.get(4); 
-        } else {
+        if (esNevado) {
+            int chance = MathUtils.random(1, 100);
+            if (chance <= 25) {
+                seleccionada = this.catalogoSpawns.get(4);
+            } else if (chance <= 40) {
+                seleccionada = this.catalogoSpawns.get(5);
+            }
+        }
+
+        if (seleccionada == null) {
             int tirada = MathUtils.random(1, this.pesoTotal);
             int acumulado = 0;
             

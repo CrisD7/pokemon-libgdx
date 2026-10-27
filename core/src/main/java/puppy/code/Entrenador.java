@@ -164,12 +164,17 @@ public class Entrenador implements Colisionable {
     public boolean verificarColision(Pokemon pokemon) {
         if (!this.herido && pokemon.isColisionActiva() && !pokemon.isCapturando() 
                 && this.hitbox.overlaps(pokemon.getHitbox())) {
-        	if (pokemon instanceof Snorunt) {
+            
+            if (pokemon instanceof Snorunt) {
                 recibirCongelamiento(2.15f);
+            } else if (pokemon instanceof puppy.code.pokemones.Glalie) {
+            	recibirCongelamiento(3.0f);
+                recibirDano();
             } else {
                 recibirDano();
             }
-        	return true;
+            
+            return true;
         }
         return false;
     }

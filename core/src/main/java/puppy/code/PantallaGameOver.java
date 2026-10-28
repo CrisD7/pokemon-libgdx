@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.audio.Music;
 
 public class PantallaGameOver implements Screen {
     private Pokewalk game;
@@ -27,10 +28,14 @@ public class PantallaGameOver implements Screen {
     private float escalaSalir;
     private boolean hoverVolver;
     private boolean hoverSalir;
+    
+    private Music musicaMuerte;
 
-    public PantallaGameOver(Pokewalk game, int puntajeAlcanzado) {
+    public PantallaGameOver(Pokewalk game, int puntajeAlcanzado, Music musicaMuerte) {
         this.game = game;
         this.puntajeAlcanzado = puntajeAlcanzado;
+        this.musicaMuerte = musicaMuerte;
+        
         this.game.actualizarHighScore(puntajeAlcanzado);
 
         this.texFondo = new Texture(Gdx.files.internal("fondo_cesped.png"));
@@ -169,6 +174,11 @@ public class PantallaGameOver implements Screen {
         this.texBtnVolver.dispose();
         this.texBtnSalir.dispose();
         this.fuentePuntaje.dispose();
+        
+        if (this.musicaMuerte != null) {
+            this.musicaMuerte.stop();
+            this.musicaMuerte.dispose();
+        }
     }
 
     // Getters y Setters estrictos (GM-5)

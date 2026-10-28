@@ -52,6 +52,13 @@ public class Entrenador implements Colisionable {
         this.vidasActuales = 3;
         this.herido = false;
         this.tiempoHerido = 0f;
+        
+        if (nombrePersonaje.equalsIgnoreCase("chupete")) {
+            this.velocidad = 340f; 
+        } else {
+            this.velocidad = 280f; 
+        }
+        
         this.sonidoCurar = Gdx.audio.newSound(Gdx.files.internal("sonidoRevivir.wav"));
         this.sonidoCongelar = Gdx.audio.newSound(Gdx.files.internal("sonidoCongelado.wav"));
         this.sonidoGolpe = Gdx.audio.newSound(Gdx.files.internal("perderVida.wav"));

@@ -13,6 +13,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import puppy.code.pokemones.Pokemon;
 import puppy.code.spawns.GestorSpawns;
 
@@ -43,6 +44,13 @@ public class PantallaJuego implements Screen {
     private Texture texturaFondoAnterior;
     private boolean enTransicion = false;
     private float alphaTransicion = 0f;
+    
+    private boolean estaPausado = false;
+    
+    private boolean enAnimacionMuerte = false;
+    private float timerMuerte = 0f;
+    private ShapeRenderer shapeRenderer;
+    private Music musicaMuerte;
 
     public PantallaJuego(Pokewalk game) {
         this.game = game;
@@ -60,6 +68,8 @@ public class PantallaJuego implements Screen {
         // Carga y reproducción de música de fondo en bucle
         this.musicaFondo = Gdx.audio.newMusic(Gdx.files.internal("musica_fondo.wav"));
         this.musicaFondo.setLooping(true);
+        this.shapeRenderer = new ShapeRenderer();
+        this.musicaMuerte = Gdx.audio.newMusic(Gdx.files.internal("muerte.wav"));
         
         com.badlogic.gdx.Preferences prefs = Gdx.app.getPreferences("PokewalkPrefs");
         float volumenGuardado = prefs.getFloat("volumenMusica", 0.3f);
@@ -84,151 +94,169 @@ public class PantallaJuego implements Screen {
     public void render(float delta) {
         float anchoEscalado = Gdx.graphics.getWidth();
         float altoEscalado = anchoEscalado * ((float) this.texturaFondo.getHeight() / this.texturaFondo.getWidth());
-
-        // 1. Actualizar fondo
-        this.fondoY1 -= this.velocidadFondo * delta;
-        this.fondoY2 -= this.velocidadFondo * delta;
-
-        if (this.fondoY1 + altoEscalado <= 0) {
-            this.fondoY1 = this.fondoY2 + altoEscalado;
-        }
-        if (this.fondoY2 + altoEscalado <= 0) {
-            this.fondoY2 = this.fondoY1 + altoEscalado;
-        }
         
-        // 2. Actualizar entrenador y disparo
-        this.entrenador.update(delta, this.velocidadFondo);
-        actualizarDisparo(delta);
-        gestionarVolumen();
-        
-        int umbralCalculado = this.puntaje / 1000;
-        if (umbralCalculado > this.umbralBiomaActual) {
-            this.umbralBiomaActual = umbralCalculado;
-            cambiarBiomaAleatorio();
+        if (Gdx.input.isKeyJustPressed(Input.Keys.P) || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            this.estaPausado = !this.estaPausado;
         }
 
-        // 3. Spawnear nuevos Pokémon
-        boolean biomaNevado = (this.indiceBiomaActual == 2); 
-        Pokemon nuevo = GestorSpawns.getInstancia().intentarGenerarPokemon(delta, biomaNevado);
-        
-        if (nuevo != null) {
-            this.pokemonesActivos.add(nuevo);
-        }
-
-        // 4. Actualizar Pokéballs activas
-        Iterator<Pokeball> iterBalls = this.pokeballsActivas.iterator();
-        while (iterBalls.hasNext()) {
-            Pokeball ball = iterBalls.next();
-            ball.update(delta);
-            if (ball.salioDePantalla()) {
-                iterBalls.remove();
-            }
-        }
-
-        // 5. Actualizar Pokémon y verificar colisiones
-        float centroEntrenadorX = this.entrenador.getX() + (this.entrenador.getWidth() / 2f);
-        float centroEntrenadorY = this.entrenador.getY() + (this.entrenador.getHeight() / 2f);
-
-        Iterator<Pokemon> iterPoke = this.pokemonesActivos.iterator();
-        while (iterPoke.hasNext()) {
-            Pokemon p = iterPoke.next();
-            p.actualizarPosicionObjetivo(centroEntrenadorX, centroEntrenadorY);
-            p.actualizar(delta, this.velocidadFondo);
+        // TODO ESTE BLOQUE SE CONGELA AL PAUSAR
+        if (!this.estaPausado && !this.enAnimacionMuerte) {
             
-            // Si ya terminó su animación de encogimiento tras ser capturado, se elimina
-            if (p.capturaCompletada()) {
-                p.dispose();
-                iterPoke.remove();
-                continue;
+            // 1. Actualizar fondo
+            this.fondoY1 -= this.velocidadFondo * delta;
+            this.fondoY2 -= this.velocidadFondo * delta;
+
+            if (this.fondoY1 + altoEscalado <= 0) {
+                this.fondoY1 = this.fondoY2 + altoEscalado;
+            }
+            if (this.fondoY2 + altoEscalado <= 0) {
+                this.fondoY2 = this.fondoY1 + altoEscalado;
+            }
+            
+            // 2. Actualizar entrenador y disparo
+            this.entrenador.update(delta, this.velocidadFondo);
+            actualizarDisparo(delta);
+            gestionarVolumen();
+            
+            int umbralCalculado = this.puntaje / 1000;
+            if (umbralCalculado > this.umbralBiomaActual) {
+                this.umbralBiomaActual = umbralCalculado;
+                cambiarBiomaAleatorio();
             }
 
-            // A) Verificar impacto con Pokéballs (solo si aún no está encogiéndose)
-            if (!p.isCapturando()) {
-                Iterator<Pokeball> iterColisionBall = this.pokeballsActivas.iterator();
-                while (iterColisionBall.hasNext()) {
-                    Pokeball ball = iterColisionBall.next();
-                    if (ball.verificarCaptura(p)) {
-                        iterColisionBall.remove(); // La Pokéball se consume al impactar
-                        // Si el golpe vence la resistencia del Pokémon, suma puntos e inicia encogimiento
-                        if (p.recibirImpactoPokeball()) {
-                            this.puntaje += p.getPuntosPorCaptura();
-                            
-                            if (p instanceof puppy.code.pokemones.Snorlax) {
+            // 3. Spawnear nuevos Pok�mon
+            boolean biomaNevado = (this.indiceBiomaActual == 2); 
+            Pokemon nuevo = GestorSpawns.getInstancia().intentarGenerarPokemon(delta, biomaNevado);
+            
+            if (nuevo != null) {
+                this.pokemonesActivos.add(nuevo);
+            }
+
+            // 4. Actualizar Pok�balls activas
+            Iterator<Pokeball> iterBalls = this.pokeballsActivas.iterator();
+            while (iterBalls.hasNext()) {
+                Pokeball ball = iterBalls.next();
+                ball.update(delta);
+                if (ball.salioDePantalla()) {
+                    iterBalls.remove();
+                }
+            }
+
+            // 5. Actualizar Pok�mon y verificar colisiones
+            float centroEntrenadorX = this.entrenador.getX() + (this.entrenador.getWidth() / 2f);
+            float centroEntrenadorY = this.entrenador.getY() + (this.entrenador.getHeight() / 2f);
+
+            Iterator<Pokemon> iterPoke = this.pokemonesActivos.iterator();
+            while (iterPoke.hasNext()) {
+                Pokemon p = iterPoke.next();
+                p.actualizarPosicionObjetivo(centroEntrenadorX, centroEntrenadorY);
+                p.actualizar(delta, this.velocidadFondo);
+                
+                if (p.capturaCompletada()) {
+                    p.dispose();
+                    iterPoke.remove();
+                    continue;
+                }
+
+                if (!p.isCapturando()) {
+                    Iterator<Pokeball> iterColisionBall = this.pokeballsActivas.iterator();
+                    while (iterColisionBall.hasNext()) {
+                        Pokeball ball = iterColisionBall.next();
+                        if (ball.verificarCaptura(p)) {
+                            iterColisionBall.remove(); 
+                            if (p.recibirImpactoPokeball()) {
+                                this.puntaje += p.getPuntosPorCaptura();
+                                
                                 com.badlogic.gdx.Preferences prefs = Gdx.app.getPreferences("PokewalkPrefs");
-                                int capturados = prefs.getInteger("snorlaxCapturados", 0);
-                                prefs.putInteger("snorlaxCapturados", capturados + 1);
+                                
+                                if (p instanceof puppy.code.pokemones.Snorlax) {
+                                    prefs.putInteger("snorlaxCapturados", prefs.getInteger("snorlaxCapturados", 0) + 1);
+                                } else if (p instanceof puppy.code.pokemones.Caterpie) {
+                                    prefs.putInteger("caterpieCapturados", prefs.getInteger("caterpieCapturados", 0) + 1);
+                                } else if (p instanceof puppy.code.pokemones.Rattata) {
+                                    prefs.putInteger("rattataCapturados", prefs.getInteger("rattataCapturados", 0) + 1);
+                                } else if (p instanceof puppy.code.pokemones.Kadabra) {
+                                    prefs.putInteger("kadabraCapturados", prefs.getInteger("kadabraCapturados", 0) + 1);
+                                } else if (p instanceof puppy.code.pokemones.Snorunt) {
+                                    prefs.putInteger("snoruntCapturados", prefs.getInteger("snoruntCapturados", 0) + 1);
+                                } else if (p instanceof puppy.code.pokemones.Glalie) {
+                                    prefs.putInteger("glalieCapturados", prefs.getInteger("glalieCapturados", 0) + 1);
+                                }
+                                
                                 prefs.flush();
                             }
+                            break;
                         }
-                        break;
+                    }
+                }
+
+                if (!p.isCapturando() && this.entrenador.verificarColision(p)) {
+                    p.dispose();
+                    iterPoke.remove();
+                    continue;
+                }
+                
+                if (p.salioDePantalla()) {
+                    p.dispose();
+                    iterPoke.remove();
+                }
+            }
+            
+            // Logica de Revivir
+            this.timerRevivires += delta;
+            if (this.timerRevivires >= 3.5f) { 
+                this.timerRevivires = 0f;
+                
+                if (this.entrenador.getVidasActuales() < this.entrenador.getVidasMaximas()) {
+                    if (MathUtils.random(1, 100) <= 15) { 
+                        boolean esMax = MathUtils.random(1, 100) <= 10; 
+                        float posX = MathUtils.random(0, anchoEscalado - 48f);
+                        float posY = altoEscalado + 10f;
+                        this.reviviresActivos.add(new Revivir(posX, posY, esMax));
                     }
                 }
             }
 
-            // B) ¿Chocó contra el entrenador? (Solo si no está en animación de captura)
-            if (!p.isCapturando() && this.entrenador.verificarColision(p)) {
-                p.dispose();
-                iterPoke.remove();
-                continue;
-            }
-            
-            // C) ¿Salió de los límites de la pantalla?
-            if (p.salioDePantalla()) {
-                p.dispose();
-                iterPoke.remove();
-            }
-        }
-        
-        // Logica de Revivir (Recuperar Vidas)
-        this.timerRevivires += delta;
-        if (this.timerRevivires >= 3.5f) { 
-            this.timerRevivires = 0f;
-            
-            if (this.entrenador.getVidasActuales() < this.entrenador.getVidasMaximas()) {
-                if (MathUtils.random(1, 100) <= 15) { 
-                    boolean esMax = MathUtils.random(1, 100) <= 10; 
-                    float posX = MathUtils.random(0, anchoEscalado - 48f);
-                    float posY = altoEscalado + 10f;
-                    this.reviviresActivos.add(new Revivir(posX, posY, esMax));
+            for (int i = this.reviviresActivos.size - 1; i >= 0; i--) {
+                Revivir rev = this.reviviresActivos.get(i);
+                
+                rev.update(delta, this.velocidadFondo);
+
+                if (rev.isExpirada() || rev.salioDePantalla()) {
+                    rev.dispose();
+                    this.reviviresActivos.removeIndex(i);
+                    continue;
+                }
+                
+                if (this.entrenador.getHitbox().overlaps(rev.getHitbox())) {
+                    this.entrenador.recuperarVida(rev.isMaxRevivir());
+                    rev.dispose();
+                    this.reviviresActivos.removeIndex(i);
                 }
             }
-        }
 
-        for (int i = this.reviviresActivos.size - 1; i >= 0; i--) {
-            Revivir rev = this.reviviresActivos.get(i);
-            
-            rev.update(delta, this.velocidadFondo);
-
-            if (rev.isExpirada() || rev.salioDePantalla()) {
-                rev.dispose();
-                this.reviviresActivos.removeIndex(i);
-                continue;
+            if (this.entrenador.estaDerrotado() && !this.enAnimacionMuerte) {
+                this.enAnimacionMuerte = true;
+                this.timerMuerte = 0f;
+                if (this.musicaFondo != null) {
+                    this.musicaFondo.stop(); 
+                }
+                this.musicaMuerte.play();
             }
-            
-            if (this.entrenador.getHitbox().overlaps(rev.getHitbox())) {
-                this.entrenador.recuperarVida(rev.isMaxRevivir());
-                rev.dispose();
-                this.reviviresActivos.removeIndex(i);
-            }
-        }
 
-        if (this.entrenador.estaDerrotado()) {
-            this.game.setScreen(new PantallaGameOver(this.game, this.puntaje));
-            this.dispose();
-            return;
-        }
-
-        if (this.enTransicion) {
-            this.alphaTransicion += delta * 0.5f;
-            if (this.alphaTransicion >= 1f) {
-                this.alphaTransicion = 1f;
-                this.enTransicion = false;
-                if (this.texturaFondoAnterior != null) {
-                    this.texturaFondoAnterior.dispose();
-                    this.texturaFondoAnterior = null;
+            if (this.enTransicion) {
+                this.alphaTransicion += delta * 0.5f;
+                if (this.alphaTransicion >= 1f) {
+                    this.alphaTransicion = 1f;
+                    this.enTransicion = false;
+                    if (this.texturaFondoAnterior != null) {
+                        this.texturaFondoAnterior.dispose();
+                        this.texturaFondoAnterior = null;
+                    }
                 }
             }
-        }
+        } 
+        // FIN DEL BLOQUE DE CONGELAMIENTO
 
         // 6. Dibujar todo
         Gdx.gl.glClearColor(0, 0, 0, 1);
@@ -256,14 +284,87 @@ public class PantallaJuego implements Screen {
         for (Pokeball ball : this.pokeballsActivas) {
             ball.draw(this.game.getBatch());
         }
-        
         for (Revivir r : this.reviviresActivos) {
             r.draw(this.game.getBatch());
         }
         
         this.entrenador.draw(this.game.getBatch());
         dibujarHUD();
+        
+        if (this.estaPausado) {
+            dibujarMenuPausa(anchoEscalado, altoEscalado);
+        }
+        
         this.game.getBatch().end();
+        
+        if (this.enAnimacionMuerte) {
+            this.timerMuerte += delta;
+            
+            float centroX = this.entrenador.getX() + (this.entrenador.getWidth() / 2f);
+            float centroY = this.entrenador.getY() + (this.entrenador.getHeight() / 2f);
+            
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            
+            this.shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+            Gdx.gl.glLineWidth(6f);
+            
+            float radio = this.timerMuerte * 400f; 
+            float opacidad = Math.max(0f, 1f - (this.timerMuerte / 1.5f));
+            
+            this.shapeRenderer.setColor(1f, 0.2f, 0.2f, opacidad);
+            this.shapeRenderer.circle(centroX, centroY, radio);
+            this.shapeRenderer.end();
+            
+            Gdx.gl.glDisable(GL20.GL_BLEND);
+            
+            if (this.timerMuerte >= 1.5f) {
+                this.game.setScreen(new PantallaGameOver(this.game, this.puntaje, this.musicaMuerte));
+                this.dispose();
+                return;
+            }
+        }
+    }
+    
+    private void dibujarMenuPausa(float ancho, float alto) {
+        com.badlogic.gdx.Preferences prefs = Gdx.app.getPreferences("PokewalkPrefs");
+        
+        int caterpie = prefs.getInteger("caterpieCapturados", 0);
+        int rattata = prefs.getInteger("rattataCapturados", 0);
+        int kadabra = prefs.getInteger("kadabraCapturados", 0);
+        int snorlax = prefs.getInteger("snorlaxCapturados", 0);
+        int snorunt = prefs.getInteger("snoruntCapturados", 0);
+        int glalie = prefs.getInteger("glalieCapturados", 0);
+        
+        this.game.getBatch().setColor(0f, 0f, 0f, 0.6f);
+        this.game.getBatch().draw(this.texturaFondo, 0, 0, ancho, alto); 
+        this.game.getBatch().setColor(Color.WHITE);
+        
+        this.fuentePuntaje.setColor(Color.YELLOW);
+        this.fuentePuntaje.draw(this.game.getBatch(), "JUEGO PAUSADO", ancho / 2f - 140f, alto - 120f);
+        
+        this.fuentePuntaje.setColor(Color.WHITE);
+        this.fuentePuntaje.draw(this.game.getBatch(), "Registro de Capturas", ancho / 2f - 180f, alto - 200f);
+        
+        this.fuentePuntaje.getData().setScale(1.2f);
+        float col1 = ancho / 2f - 220f;
+        float col2 = ancho / 2f + 40f;
+        float filaBase = alto - 280f;
+        float saltoFila = 45f;
+        
+        this.fuentePuntaje.draw(this.game.getBatch(), "Caterpie: " + caterpie, col1, filaBase);
+        this.fuentePuntaje.draw(this.game.getBatch(), "Rattata: " + rattata, col1, filaBase - saltoFila);
+        this.fuentePuntaje.draw(this.game.getBatch(), "Kadabra: " + kadabra, col1, filaBase - saltoFila * 2);
+        
+        this.fuentePuntaje.draw(this.game.getBatch(), "Snorlax: " + snorlax, col2, filaBase);
+        this.fuentePuntaje.draw(this.game.getBatch(), "Snorunt: " + snorunt, col2, filaBase - saltoFila);
+        this.fuentePuntaje.draw(this.game.getBatch(), "Glalie: " + glalie, col2, filaBase - saltoFila * 2);
+        
+        this.fuentePuntaje.getData().setScale(2.0f); 
+        
+        this.fuentePuntaje.setColor(Color.CYAN);
+        this.fuentePuntaje.draw(this.game.getBatch(), "[P] o [ESC] Volver a la partida", ancho / 2f - 240f, filaBase - 160f);
+        this.fuentePuntaje.setColor(Color.WHITE);
     }
 
     private void actualizarDisparo(float delta) {
@@ -316,6 +417,7 @@ public class PantallaJuego implements Screen {
             this.musicaFondo.dispose();
         }
         if (this.texturaFondoAnterior != null) this.texturaFondoAnterior.dispose();
+        if (this.shapeRenderer != null) this.shapeRenderer.dispose();
         this.entrenador.dispose();
         for (Pokemon p : this.pokemonesActivos) {
             p.dispose();

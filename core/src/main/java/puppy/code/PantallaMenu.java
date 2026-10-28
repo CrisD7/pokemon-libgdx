@@ -24,6 +24,7 @@ public class PantallaMenu implements Screen {
     private Texture texCardLyra;
     private Texture texCardSilver;
     private Texture texCardGio;
+    private Texture texCardChupete;
     private Texture texCandado;
     private BitmapFont fuenteTexto;
 
@@ -35,11 +36,13 @@ public class PantallaMenu implements Screen {
     private Rectangle boundsLyra;
     private Rectangle boundsSilver;
     private Rectangle boundsGio;
+    private Rectangle boundsChupete;
 
     private float escalaEthan;
     private float escalaLyra;
     private float escalaSilver;
     private float escalaGio;
+    private float escalaChupete;
 
     public PantallaMenu(Pokewalk game) {
         this.game = game;
@@ -55,6 +58,7 @@ public class PantallaMenu implements Screen {
         this.texCardLyra = cargarTexturaSegura("card_lyra.png");
         this.texCardSilver = cargarTexturaSegura("card_silver.png");
         this.texCardGio = cargarTexturaSegura("card_gio.png");
+        this.texCardChupete = cargarTexturaSegura("card_chupete.png");
         this.texCandado = cargarTexturaSegura("candado.png");
 
         float altoEscalado = Gdx.graphics.getWidth() * ((float) this.texFondo.getHeight() / this.texFondo.getWidth());
@@ -71,7 +75,7 @@ public class PantallaMenu implements Screen {
         float cardW = 190f;
         float cardH = 210f;
         float espacio = 15f;
-        float totalW = (cardW * 4f) + (espacio * 3f);
+        float totalW = (cardW * 5f) + (espacio * 4f);
         float inicioX = (ancho - totalW) / 2f;
         float posY = (alto / 2f) - (cardH / 2f);
 
@@ -79,11 +83,13 @@ public class PantallaMenu implements Screen {
         this.boundsLyra = new Rectangle(inicioX + cardW + espacio, posY, cardW, cardH);
         this.boundsSilver = new Rectangle(inicioX + (cardW + espacio) * 2f, posY, cardW, cardH);
         this.boundsGio = new Rectangle(inicioX + (cardW + espacio) * 3f, posY, cardW, cardH);
+        this.boundsChupete = new Rectangle(inicioX + (cardW + espacio) * 4f, posY, cardW, cardH);
 
         this.escalaEthan = 1.0f;
         this.escalaLyra = 1.0f;
         this.escalaSilver = 1.0f;
         this.escalaGio = 1.0f;
+        this.escalaChupete = 1.0f;
     }
 
     private Texture cargarTexturaSegura(String ruta) {
@@ -164,22 +170,32 @@ public class PantallaMenu implements Screen {
         boolean silverDesbloqueado = record >= 1000;
         com.badlogic.gdx.Preferences prefs = Gdx.app.getPreferences("PokewalkPrefs");
         int snorlaxCapturados = prefs.getInteger("snorlaxCapturados", 0);
+        int caterpie = prefs.getInteger("caterpieCapturados", 0);
+        int rattata = prefs.getInteger("rattataCapturados", 0);
+        int kadabra = prefs.getInteger("kadabraCapturados", 0);
+        int snorunt = prefs.getInteger("snoruntCapturados", 0);
+        int glalie = prefs.getInteger("glalieCapturados", 0);
+        
         boolean gioDesbloqueado = snorlaxCapturados >= 25;
+        boolean chupeteDesbloqueado = (caterpie >= 26 && rattata >= 26 && kadabra >= 26 && snorlaxCapturados >= 26 && snorunt >= 26 && glalie >= 26);
 
         boolean hoverRealEthan = this.boundsEthan.contains(mouseX, mouseY);
         boolean hoverRealLyra = this.boundsLyra.contains(mouseX, mouseY);
         boolean hoverRealSilver = this.boundsSilver.contains(mouseX, mouseY);
         boolean hoverRealGio = this.boundsGio.contains(mouseX, mouseY);
+        boolean hoverRealChupete = this.boundsChupete.contains(mouseX, mouseY);
         
         boolean hoverEthan = hoverRealEthan;
         boolean hoverLyra = lyraDesbloqueada && hoverRealLyra;
         boolean hoverSilver = silverDesbloqueado && hoverRealSilver;
         boolean hoverGio = gioDesbloqueado && hoverRealGio;
+        boolean hoverChupete = chupeteDesbloqueado && hoverRealChupete;
 
         this.escalaEthan += ((hoverEthan ? 1.12f : 1.0f) - this.escalaEthan) * 12f * delta;
         this.escalaLyra += ((hoverLyra ? 1.12f : 1.0f) - this.escalaLyra) * 12f * delta;
         this.escalaSilver += ((hoverSilver ? 1.12f : 1.0f) - this.escalaSilver) * 12f * delta;
         this.escalaGio += ((hoverGio ? 1.12f : 1.0f) - this.escalaGio) * 12f * delta;
+        this.escalaChupete += ((hoverChupete ? 1.12f : 1.0f) - this.escalaChupete) * 12f * delta;
 
         this.fuenteTexto.setColor(Color.YELLOW);
         this.fuenteTexto.draw(this.game.getBatch(), "ELIGE TU ENTRENADOR", ancho / 2f - 160f, alto - 90f);
@@ -189,6 +205,7 @@ public class PantallaMenu implements Screen {
         if (this.texCardLyra != null) dibujarTarjeta(this.texCardLyra, this.boundsLyra, this.escalaLyra, hoverLyra, lyraDesbloqueada);
         if (this.texCardSilver != null) dibujarTarjeta(this.texCardSilver, this.boundsSilver, this.escalaSilver, hoverSilver, silverDesbloqueado);
         if (this.texCardGio != null) dibujarTarjeta(this.texCardGio, this.boundsGio, this.escalaGio, hoverGio, gioDesbloqueado);
+        if (this.texCardChupete != null) dibujarTarjeta(this.texCardChupete, this.boundsChupete, this.escalaChupete, hoverChupete, chupeteDesbloqueado);
         
         float candadoSize = 64f;
         this.fuenteTexto.getData().setScale(1.05f); 
@@ -227,6 +244,17 @@ public class PantallaMenu implements Screen {
             }
         }
         
+        if (!chupeteDesbloqueado) {
+            if (this.texCandado != null) {
+                float candadoX = this.boundsChupete.x + (this.boundsChupete.width / 2f) - (candadoSize / 2f);
+                float candadoY = this.boundsChupete.y + (this.boundsChupete.height / 2f) - (candadoSize / 2f) + 25f;
+                this.game.getBatch().draw(this.texCandado, candadoX, candadoY, candadoSize, candadoSize);
+            }
+            if (hoverRealChupete) {
+                this.fuenteTexto.draw(this.game.getBatch(), "Captura 26 de cada\nPokémon existente.", this.boundsChupete.x + 5f, this.boundsChupete.y + 65f);
+            }
+        }
+        
         this.fuenteTexto.getData().setScale(2.0f);
         this.fuenteTexto.setColor(Color.WHITE);
 
@@ -239,6 +267,7 @@ public class PantallaMenu implements Screen {
             else if (hoverLyra) iniciarPartidaCon("lyra");
             else if (hoverSilver) iniciarPartidaCon("silver");
             else if (hoverGio) iniciarPartidaCon("gio");
+            else if (hoverChupete) iniciarPartidaCon("chupete");
         }
     }
 
@@ -289,6 +318,7 @@ public class PantallaMenu implements Screen {
         if (this.texCardLyra != null) this.texCardLyra.dispose();
         if (this.texCardSilver != null) this.texCardSilver.dispose();
         if (this.texCardGio != null) this.texCardGio.dispose();
+        if (this.texCardChupete != null) this.texCardChupete.dispose();
         if (this.texCandado != null) this.texCandado.dispose();
         this.fuenteTexto.dispose();
     }

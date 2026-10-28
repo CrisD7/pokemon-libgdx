@@ -4,7 +4,7 @@ public class Glalie extends Pokemon {
     private int impactosRecibidos;
 
     public Glalie(float x, float y) {
-        super(x, y, 120f, 120f, 180f, 50, "pokemones/Glalie.png");
+        super(x, y, 120f, 120f, 140f, 50, "pokemones/Glalie.png");
         this.impactosRecibidos = 0;
     }
 

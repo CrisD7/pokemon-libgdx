@@ -24,10 +24,26 @@ public class Pokewalk extends Game {
         super.render();
     }
 
+    /** setScreen de LibGDX no libera la pantalla anterior; aquí centralizamos su propiedad. */
+    @Override
+    public void setScreen(com.badlogic.gdx.Screen nuevaPantalla) {
+        if (nuevaPantalla == getScreen()) return;
+        com.badlogic.gdx.Screen anterior = getScreen();
+        if (batch != null && batch.isDrawing()) batch.flush();
+        super.setScreen(nuevaPantalla);
+        if (anterior != null) anterior.dispose();
+    }
+
     @Override
     public void dispose() {
+        setScreen(null);
+        puppy.code.pokemones.Kadabra.disposeRecursosCompartidos();
+        puppy.code.pokemones.Pokemon.disposeRecursosCompartidos();
+        Pokeball.disposeTexturaGlobal();
+        TexturasCompartidas.dispose();
         if (this.batch != null) {
             this.batch.dispose();
+            this.batch = null;
         }
     }
 

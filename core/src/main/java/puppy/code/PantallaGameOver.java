@@ -128,10 +128,8 @@ public class PantallaGameOver implements Screen {
         if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
             if (this.hoverVolver) {
                 this.game.setScreen(new PantallaJuego(this.game));
-                this.dispose();
             } else if (this.hoverSalir) {
                 this.game.setScreen(new PantallaMenu(this.game));
-                this.dispose();
             }
         }
     }

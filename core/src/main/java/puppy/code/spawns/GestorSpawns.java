@@ -23,13 +23,11 @@ public class GestorSpawns {
     private float timerSpawn;
     private float intervaloSpawn;
     private ArrayList<EntradaSpawn> catalogoSpawns;
-    private int pesoTotal;
 
     private GestorSpawns() {
         this.timerSpawn = 0f;
         this.intervaloSpawn = 1.8f;
         this.catalogoSpawns = new ArrayList<>();
-        this.pesoTotal = 0;
 
         inicializarCatalogoPorDefecto();
     }
@@ -43,18 +41,20 @@ public class GestorSpawns {
 
     // Permite agregar nuevas especies en tiempo de ejecución sin tocar la lógica de sorteo (Cumple OCP)
     public void registrarSpawn(EntradaSpawn nuevaEntrada) {
-        this.catalogoSpawns.add(nuevaEntrada);
-        this.pesoTotal += nuevaEntrada.getPesoProbabilidad();
+        ArrayList<EntradaSpawn> nuevo = getCatalogoSpawns();
+        nuevo.add(java.util.Objects.requireNonNull(nuevaEntrada, "nuevaEntrada").copia());
+        validarTotales(nuevo);
+        this.catalogoSpawns = nuevo;
     }
 
     private void inicializarCatalogoPorDefecto() {
-        // 45% Caterpie, 25% Rattata, 15% Kadabra, 15% Snorlax, 20% Snorunt
-        registrarSpawn(new EntradaSpawn(45, (x, y) -> new Caterpie(x, y), () -> new MovimientoRecto()));
-        registrarSpawn(new EntradaSpawn(25, (x, y) -> new Rattata(x, y), () -> new MovimientoZigZag()));
-        registrarSpawn(new EntradaSpawn(15, (x, y) -> new Kadabra(x, y), () -> new MovimientoEstatico()));
-        registrarSpawn(new EntradaSpawn(15, (x, y) -> new Snorlax(x, y), () -> new MovimientoRecto()));
-        registrarSpawn(new EntradaSpawn(20, (x, y) -> new Snorunt(x, y), () -> new MovimientoRecto()));
-        registrarSpawn(new EntradaSpawn(0, (x, y) -> new Glalie(x, y), () -> new MovimientoRecto()));
+        // Pesos relativos: normal total 120, nevado total 600. Conservan la mezcla anterior.
+        registrarSpawn(new EntradaSpawn(45, 135, (x, y) -> new Caterpie(x, y), () -> new MovimientoRecto()));
+        registrarSpawn(new EntradaSpawn(25, 75, (x, y) -> new Rattata(x, y), () -> new MovimientoZigZag()));
+        registrarSpawn(new EntradaSpawn(15, 45, (x, y) -> new Kadabra(x, y), () -> new MovimientoEstatico()));
+        registrarSpawn(new EntradaSpawn(15, 45, (x, y) -> new Snorlax(x, y), () -> new MovimientoRecto()));
+        registrarSpawn(new EntradaSpawn(20, 210, (x, y) -> new Snorunt(x, y), () -> new MovimientoRecto()));
+        registrarSpawn(new EntradaSpawn(0, 90, (x, y) -> new Glalie(x, y), () -> new MovimientoRecto()));
     }
 
     public Pokemon intentarGenerarPokemon(float delta, boolean esNevado) {
@@ -70,29 +70,9 @@ public class GestorSpawns {
         float posX = MathUtils.random(40f, Gdx.graphics.getWidth() - 120f);
         float posY = Gdx.graphics.getHeight() + 20f;
 
-        EntradaSpawn seleccionada = null;
-
-        if (esNevado) {
-            int chance = MathUtils.random(1, 100);
-            if (chance <= 25) {
-                seleccionada = this.catalogoSpawns.get(4);
-            } else if (chance <= 40) {
-                seleccionada = this.catalogoSpawns.get(5);
-            }
-        }
-
-        if (seleccionada == null) {
-            int tirada = MathUtils.random(1, this.pesoTotal);
-            int acumulado = 0;
-            
-            for (EntradaSpawn entrada : this.catalogoSpawns) {
-                acumulado += entrada.getPesoProbabilidad();
-                if (tirada <= acumulado) {
-                    seleccionada = entrada;
-                    break;
-                }
-            }
-        }
+        int total = getPesoTotal(esNevado);
+        if (total == 0) return null;
+        EntradaSpawn seleccionada = seleccionarEntrada(esNevado, MathUtils.random(1, total));
 
         boolean shiny = MathUtils.random(1, 100) <= 10;
         float multVel = shiny ? 1.4f : 1.0f;
@@ -122,11 +102,52 @@ public class GestorSpawns {
 
     // Getters y Setters estrictos (GM-5)
     public float getTimerSpawn() { return timerSpawn; }
-    public void setTimerSpawn(float timerSpawn) { this.timerSpawn = timerSpawn; }
+    public void setTimerSpawn(float timerSpawn) { if (!Float.isFinite(timerSpawn) || timerSpawn < 0f) throw new IllegalArgumentException("Timer inválido");
+        this.timerSpawn = timerSpawn; }
     public float getIntervaloSpawn() { return intervaloSpawn; }
-    public void setIntervaloSpawn(float intervaloSpawn) { this.intervaloSpawn = intervaloSpawn; }
-    public ArrayList<EntradaSpawn> getCatalogoSpawns() { return catalogoSpawns; }
-    public void setCatalogoSpawns(ArrayList<EntradaSpawn> catalogoSpawns) { this.catalogoSpawns = catalogoSpawns; }
-    public int getPesoTotal() { return pesoTotal; }
-    public void setPesoTotal(int pesoTotal) { this.pesoTotal = pesoTotal; }
+    public void setIntervaloSpawn(float intervaloSpawn) { if (!Float.isFinite(intervaloSpawn) || intervaloSpawn <= 0f) throw new IllegalArgumentException("Intervalo inválido");
+        this.intervaloSpawn = intervaloSpawn; }
+    /** Copias defensivas de lista Y entradas: editar un getter no cambia el sorteo. */
+    public ArrayList<EntradaSpawn> getCatalogoSpawns() {
+        ArrayList<EntradaSpawn> copia = new ArrayList<>();
+        for (EntradaSpawn entrada : catalogoSpawns) copia.add(entrada.copia());
+        return copia;
+    }
+    public void setCatalogoSpawns(ArrayList<EntradaSpawn> catalogo) {
+        java.util.Objects.requireNonNull(catalogo, "catalogo");
+        ArrayList<EntradaSpawn> copia = new ArrayList<>();
+        for (EntradaSpawn entrada : catalogo) copia.add(java.util.Objects.requireNonNull(entrada).copia());
+        validarTotales(copia);
+        catalogoSpawns = copia;
+    }
+    private static void validarTotales(ArrayList<EntradaSpawn> catalogo) {
+        long normal = 0, nevado = 0;
+        for (EntradaSpawn entrada : catalogo) {
+            normal += entrada.getPesoProbabilidad();
+            nevado += entrada.getPesoNevado();
+        }
+        if (normal > Integer.MAX_VALUE || nevado > Integer.MAX_VALUE)
+            throw new IllegalArgumentException("La suma de pesos excede el rango entero");
+    }
+    public int getPesoTotal() { return getPesoTotal(false); }
+    public int getPesoTotal(boolean esNevado) {
+        int total = 0;
+        for (EntradaSpawn entrada : catalogoSpawns) total += entrada.pesoPara(esNevado);
+        return total;
+    }
+    /** El total es derivado; no se puede desincronizar del catálogo. */
+    public void setPesoTotal(int peso) {
+        if (peso != getPesoTotal()) throw new IllegalArgumentException("El total depende del catálogo");
+    }
+    /** Selección determinista para una tirada en [1,total], sin crear entidades ni recursos. */
+    public EntradaSpawn seleccionarEntrada(boolean esNevado, int tirada) {
+        if (tirada < 1 || tirada > getPesoTotal(esNevado))
+            throw new IllegalArgumentException("Tirada fuera del peso total");
+        int acumulado = 0;
+        for (EntradaSpawn entrada : catalogoSpawns) {
+            acumulado += entrada.pesoPara(esNevado);
+            if (tirada <= acumulado) return entrada.copia();
+        }
+        throw new IllegalStateException("Catálogo incoherente");
+    }
 }

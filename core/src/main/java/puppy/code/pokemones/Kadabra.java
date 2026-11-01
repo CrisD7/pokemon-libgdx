@@ -1,6 +1,5 @@
 package puppy.code.pokemones;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
@@ -24,7 +23,7 @@ public class Kadabra extends Pokemon {
 
     public Kadabra(float startX, float startY) {
         // Tamaño aumentado a 115x115 y velocidad 320f para vencer el scroll del mapa hacia arriba
-        super(startX, startY, 115f, 115f, 320f, 50, "pokemones/kadabra.png");
+        super(startX, startY, 115f, 115f, 320f, 50, "pokemones/Kadabra.png");
         this.estadoActual = ESTADO_SOMBRA;
         this.posicionFijada = false;
         this.timerFase = 0f;
@@ -38,7 +37,7 @@ public class Kadabra extends Pokemon {
 
     private static void cargarSpritesSombra() {
         if (hojaSombra == null) {
-            hojaSombra = new Texture(Gdx.files.internal("pokemones/sombra_tp.png"));
+            hojaSombra = puppy.code.TexturasCompartidas.adquirir("pokemones/sombra_tp.png");
             hojaSombra.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
 
             int anchoFrame = hojaSombra.getWidth() / 6;
@@ -112,6 +111,12 @@ public class Kadabra extends Pokemon {
         } else {
             super.draw(batch);
         }
+    }
+
+    public static void disposeRecursosCompartidos() {
+        puppy.code.TexturasCompartidas.liberar(hojaSombra);
+        hojaSombra = null;
+        framesSombra = null;
     }
 
     // Getters y Setters estrictos (GM-5)

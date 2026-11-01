@@ -2,7 +2,7 @@ package puppy.code.spawns;
 
 import puppy.code.movimientos.EstrategiaMovimiento;
 import puppy.code.movimientos.MovimientoRecto;
-import puppy.code.pokemones.Caterpie;
+import java.util.Objects;
 import puppy.code.pokemones.Pokemon;
 
 public class PokemonBuilder {
@@ -24,7 +24,7 @@ public class PokemonBuilder {
 
     // Recibe cualquier subclase de Pokemon por polimorfismo (Cumple OCP: no requiere if-else)
     public PokemonBuilder conPokemonBase(Pokemon pokemonBase) {
-        this.pokemonBase = pokemonBase;
+        this.pokemonBase = Objects.requireNonNull(pokemonBase, "pokemonBase");
         return this;
     }
 
@@ -40,34 +40,34 @@ public class PokemonBuilder {
     }
 
     public PokemonBuilder conMultiplicadorVelocidad(float multiplicador) {
-        this.multiplicadorVelocidad = multiplicador;
+        setMultiplicadorVelocidad(multiplicador);
         return this;
     }
 
     public PokemonBuilder conEstrategia(EstrategiaMovimiento estrategia) {
-        this.estrategia = estrategia;
+        this.estrategia = Objects.requireNonNull(estrategia, "estrategia");
         return this;
     }
 
     public Pokemon build() {
-        // Si no se especificó ninguno, por defecto instancia un Caterpie
         if (this.pokemonBase == null) {
-            this.pokemonBase = new Caterpie(this.x, this.y);
-        } else {
-            this.pokemonBase.setX(this.x);
-            this.pokemonBase.setY(this.y);
+            throw new IllegalStateException("Se requiere una instancia base no consumida");
         }
+        this.pokemonBase.setX(this.x);
+        this.pokemonBase.setY(this.y);
 
         this.pokemonBase.setEsShiny(this.esShiny);
         this.pokemonBase.setVelocidad(this.pokemonBase.getVelocidad() * this.multiplicadorVelocidad);
         this.pokemonBase.setEstrategiaMovimiento(this.estrategia);
 
-        return this.pokemonBase;
+        Pokemon resultado = this.pokemonBase;
+        this.pokemonBase = null; // Un build consume la base; el siguiente exige otra.
+        return resultado;
     }
 
     // Getters y Setters estrictos para cumplir GM-5
     public Pokemon getPokemonBase() { return pokemonBase; }
-    public void setPokemonBase(Pokemon pokemonBase) { this.pokemonBase = pokemonBase; }
+    public void setPokemonBase(Pokemon pokemonBase) { this.pokemonBase = Objects.requireNonNull(pokemonBase, "pokemonBase"); }
     public float getX() { return x; }
     public void setX(float x) { this.x = x; }
     public float getY() { return y; }
@@ -75,7 +75,12 @@ public class PokemonBuilder {
     public boolean isEsShiny() { return esShiny; }
     public void setEsShiny(boolean esShiny) { this.esShiny = esShiny; }
     public float getMultiplicadorVelocidad() { return multiplicadorVelocidad; }
-    public void setMultiplicadorVelocidad(float multiplicadorVelocidad) { this.multiplicadorVelocidad = multiplicadorVelocidad; }
+    public void setMultiplicadorVelocidad(float multiplicadorVelocidad) {
+        if (!Float.isFinite(multiplicadorVelocidad) || multiplicadorVelocidad <= 0f) {
+            throw new IllegalArgumentException("El multiplicador debe ser finito y positivo");
+        }
+        this.multiplicadorVelocidad = multiplicadorVelocidad;
+    }
     public EstrategiaMovimiento getEstrategia() { return estrategia; }
-    public void setEstrategia(EstrategiaMovimiento estrategia) { this.estrategia = estrategia; }
+    public void setEstrategia(EstrategiaMovimiento estrategia) { this.estrategia = Objects.requireNonNull(estrategia, "estrategia"); }
 }

@@ -272,4 +272,13 @@ public class Entrenador implements Colisionable {
     @Override
     public Rectangle getHitbox() { return hitbox; }
     public void setHitbox(Rectangle hitbox) { this.hitbox = hitbox; }
+
+    public Texture getTexHielo() { return texHielo; }
+    public void setTexHielo(Texture texHielo) { this.texHielo = texHielo; }
+    public com.badlogic.gdx.audio.Sound getSonidoCurar() { return sonidoCurar; }
+    public void setSonidoCurar(com.badlogic.gdx.audio.Sound sonidoCurar) { this.sonidoCurar = sonidoCurar; }
+    public com.badlogic.gdx.audio.Sound getSonidoCongelar() { return sonidoCongelar; }
+    public void setSonidoCongelar(com.badlogic.gdx.audio.Sound sonidoCongelar) { this.sonidoCongelar = sonidoCongelar; }
+    public com.badlogic.gdx.audio.Sound getSonidoGolpe() { return sonidoGolpe; }
+    public void setSonidoGolpe(com.badlogic.gdx.audio.Sound sonidoGolpe) { this.sonidoGolpe = sonidoGolpe; }
 }

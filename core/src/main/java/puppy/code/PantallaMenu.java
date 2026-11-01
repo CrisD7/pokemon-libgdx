@@ -251,7 +251,7 @@ public class PantallaMenu implements Screen {
                 this.game.getBatch().draw(this.texCandado, candadoX, candadoY, candadoSize, candadoSize);
             }
             if (hoverRealChupete) {
-                this.fuenteTexto.draw(this.game.getBatch(), "Captura 26 de cada\nPokémon existente.", this.boundsChupete.x + 5f, this.boundsChupete.y + 65f);
+                this.fuenteTexto.draw(this.game.getBatch(), "Captura 26 de cada\nPokÃ©mon existente.", this.boundsChupete.x + 5f, this.boundsChupete.y + 65f);
             }
         }
         
@@ -274,7 +274,6 @@ public class PantallaMenu implements Screen {
     private void iniciarPartidaCon(String personaje) {
         this.game.setPersonajeSeleccionado(personaje);
         this.game.setScreen(new PantallaJuego(this.game));
-        this.dispose();
     }
 
     private void dibujarTarjeta(Texture textura, Rectangle base, float escala, boolean enHover, boolean desbloqueado) {

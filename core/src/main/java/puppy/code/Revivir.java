@@ -1,6 +1,5 @@
 package puppy.code;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
@@ -18,7 +17,7 @@ public class Revivir implements Colisionable {
         this.maxRevivir = maxRevivir;
         this.width = 48f;
         this.height = 48f;
-        this.textura = new Texture(Gdx.files.internal(maxRevivir ? "maxRevivir.png" : "revivir.png"));
+        this.textura = TexturasCompartidas.adquirir(maxRevivir ? "maxRevivir.png" : "revivir.png");
         this.hitbox = new Rectangle(x, y, this.width, this.height);
         this.tiempoVida = 12f; 
     }
@@ -50,6 +49,24 @@ public class Revivir implements Colisionable {
     }
 
     public void dispose() {
-        if (this.textura != null) this.textura.dispose();
+        if (this.textura != null) {
+            TexturasCompartidas.liberar(this.textura);
+            this.textura = null;
+        }
     }
+
+    public float getX() { return x; }
+    public void setX(float x) { this.x = x; }
+    public float getY() { return y; }
+    public void setY(float y) { this.y = y; }
+    public float getWidth() { return width; }
+    public void setWidth(float width) { this.width = width; }
+    public float getHeight() { return height; }
+    public void setHeight(float height) { this.height = height; }
+    public Texture getTextura() { return textura; }
+    public void setTextura(Texture textura) { this.textura = TexturasCompartidas.reemplazar(this.textura, textura); }
+    public void setHitbox(Rectangle hitbox) { this.hitbox = hitbox; }
+    public void setMaxRevivir(boolean maxRevivir) { this.maxRevivir = maxRevivir; }
+    public float getTiempoVida() { return tiempoVida; }
+    public void setTiempoVida(float tiempoVida) { this.tiempoVida = tiempoVida; }
 }

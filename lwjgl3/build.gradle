@@ -130,3 +130,11 @@ startScripts.classpath = project.tasks.jar.outputs.files
 if(enableGraalNative == 'true') {
   apply from: file("nativeimage.gradle")
 }
+
+// Regresión funcional con OpenGL real; requiere pantalla (o Xvfb en CI).
+tasks.register('smokeTest', JavaExec) {
+  dependsOn testClasses
+  classpath = sourceSets.test.runtimeClasspath
+  mainClass = 'puppy.code.RevisionSmokeTest'
+  workingDir = rootProject.file('assets')
+}

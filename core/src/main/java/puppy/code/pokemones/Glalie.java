@@ -20,4 +20,7 @@ public class Glalie extends Pokemon {
     @Override
     protected void comportamientoEspecial(float delta) {
     }
+
+    public int getImpactosRecibidos() { return impactosRecibidos; }
+    public void setImpactosRecibidos(int impactosRecibidos) { this.impactosRecibidos = impactosRecibidos; }
 }

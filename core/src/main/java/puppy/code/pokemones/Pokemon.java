@@ -25,6 +25,7 @@ public abstract class Pokemon implements puppy.code.Colisionable {
     private float height;
     private float velocidad;
     private int puntosPorCaptura;
+    private String claveCapturas;
     private boolean esShiny;
     
     private float objetivoX;
@@ -54,6 +55,7 @@ public abstract class Pokemon implements puppy.code.Colisionable {
         this.height = height;
         this.velocidad = velocidad;
         this.puntosPorCaptura = puntosPorCaptura;
+        this.claveCapturas = getClass().getSimpleName().toLowerCase(java.util.Locale.ROOT) + "Capturados";
         this.esShiny = false;
         this.objetivoX = 0f;
         this.objetivoY = 0f;
@@ -93,9 +95,17 @@ public abstract class Pokemon implements puppy.code.Colisionable {
     }
 
     private void cargarSpritesheet(String rutaInterna) {
-        this.hojaSprites = new Texture(Gdx.files.internal(rutaInterna));
+        this.hojaSprites = puppy.code.TexturasCompartidas.adquirir(rutaInterna);
         this.hojaSprites.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
 
+        actualizarFramesDireccion();
+    }
+
+    private void actualizarFramesDireccion() {
+        if (this.hojaSprites == null) {
+            this.framesDireccion = null;
+            return;
+        }
         int anchoFrame = this.hojaSprites.getWidth() / 2;
         int altoFrame = this.hojaSprites.getHeight() / 4;
         TextureRegion[][] grilla = TextureRegion.split(this.hojaSprites, anchoFrame, altoFrame);
@@ -223,13 +233,22 @@ public abstract class Pokemon implements puppy.code.Colisionable {
 
     public void dispose() {
         if (this.hojaSprites != null) {
-            this.hojaSprites.dispose();
+            puppy.code.TexturasCompartidas.liberar(this.hojaSprites);
+            this.hojaSprites = null;
+            this.framesDireccion = null;
         }
     }
     
     @Override
     public boolean verificarColision(puppy.code.Colisionable otro) {
         return this.colisionActiva && !this.capturando && this.hitbox.overlaps(otro.getHitbox());
+    }
+
+    public static void disposeRecursosCompartidos() {
+        if (texturaExclamacion != null) {
+            texturaExclamacion.dispose();
+            texturaExclamacion = null;
+        }
     }
 
     // GETTERS Y SETTERS ESTRICTOS (GM-5)
@@ -245,6 +264,12 @@ public abstract class Pokemon implements puppy.code.Colisionable {
     public void setHeight(float height) { this.height = height; }
     public float getVelocidad() { return velocidad; }
     public void setVelocidad(float velocidad) { this.velocidad = velocidad; }
+    public String getClaveCapturas() { return claveCapturas; }
+    public void setClaveCapturas(String claveCapturas) {
+        if (claveCapturas == null || claveCapturas.trim().isEmpty())
+            throw new IllegalArgumentException("Clave de capturas vacía");
+        this.claveCapturas = claveCapturas;
+    }
     public int getPuntosPorCaptura() { return puntosPorCaptura; }
     public void setPuntosPorCaptura(int puntosPorCaptura) { this.puntosPorCaptura = puntosPorCaptura; }
     public boolean isEsShiny() { return esShiny; }
@@ -264,7 +289,10 @@ public abstract class Pokemon implements puppy.code.Colisionable {
     public float getEscalaCaptura() { return escalaCaptura; }
     public void setEscalaCaptura(float escalaCaptura) { this.escalaCaptura = escalaCaptura; }
     public Texture getHojaSprites() { return hojaSprites; }
-    public void setHojaSprites(Texture hojaSprites) { this.hojaSprites = hojaSprites; }
+    public void setHojaSprites(Texture hojaSprites) {
+        this.hojaSprites = puppy.code.TexturasCompartidas.reemplazar(this.hojaSprites, hojaSprites);
+        actualizarFramesDireccion();
+    }
     public TextureRegion[][] getFramesDireccion() { return framesDireccion; }
     public void setFramesDireccion(TextureRegion[][] framesDireccion) { this.framesDireccion = framesDireccion; }
     public int getDireccionActual() { return direccionActual; }

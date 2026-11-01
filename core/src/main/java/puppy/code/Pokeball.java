@@ -33,7 +33,7 @@ public class Pokeball implements Colisionable{
 
     private static void asegurarTextura() {
         if (texturaGlobal == null) {
-            texturaGlobal = new Texture(Gdx.files.internal("pokeball.png"));
+            texturaGlobal = TexturasCompartidas.adquirir("Pokeball.png");
             texturaGlobal.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
             regionPokeball = new TextureRegion(texturaGlobal);
         }
@@ -66,8 +66,9 @@ public class Pokeball implements Colisionable{
 
     public static void disposeTexturaGlobal() {
         if (texturaGlobal != null) {
-            texturaGlobal.dispose();
+            TexturasCompartidas.liberar(texturaGlobal);
             texturaGlobal = null;
+            regionPokeball = null;
         }
     }
     

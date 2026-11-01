@@ -55,6 +55,7 @@ public class PantallaJuego implements Screen {
     public PantallaJuego(Pokewalk game) {
         this.game = game;
         
+        GestorSpawns.getInstancia().reiniciar();
         this.umbralBiomaActual = 0;
         cambiarBiomaAleatorio();
         
@@ -124,7 +125,7 @@ public class PantallaJuego implements Screen {
                 cambiarBiomaAleatorio();
             }
 
-            // 3. Spawnear nuevos Pokémon
+            // 3. Spawnear nuevos PokÃ©mon
             boolean biomaNevado = (this.indiceBiomaActual == 2); 
             Pokemon nuevo = GestorSpawns.getInstancia().intentarGenerarPokemon(delta, biomaNevado);
             
@@ -132,7 +133,7 @@ public class PantallaJuego implements Screen {
                 this.pokemonesActivos.add(nuevo);
             }
 
-            // 4. Actualizar Pokéballs activas
+            // 4. Actualizar PokÃ©balls activas
             Iterator<Pokeball> iterBalls = this.pokeballsActivas.iterator();
             while (iterBalls.hasNext()) {
                 Pokeball ball = iterBalls.next();
@@ -142,7 +143,7 @@ public class PantallaJuego implements Screen {
                 }
             }
 
-            // 5. Actualizar Pokémon y verificar colisiones
+            // 5. Actualizar PokÃ©mon y verificar colisiones
             float centroEntrenadorX = this.entrenador.getX() + (this.entrenador.getWidth() / 2f);
             float centroEntrenadorY = this.entrenador.getY() + (this.entrenador.getHeight() / 2f);
 
@@ -166,23 +167,13 @@ public class PantallaJuego implements Screen {
                             iterColisionBall.remove(); 
                             if (p.recibirImpactoPokeball()) {
                                 this.puntaje += p.getPuntosPorCaptura();
+                                GestorSpawns.getInstancia().actualizarDificultadSegunPuntaje(this.puntaje);
                                 
                                 com.badlogic.gdx.Preferences prefs = Gdx.app.getPreferences("PokewalkPrefs");
                                 
-                                if (p instanceof puppy.code.pokemones.Snorlax) {
-                                    prefs.putInteger("snorlaxCapturados", prefs.getInteger("snorlaxCapturados", 0) + 1);
-                                } else if (p instanceof puppy.code.pokemones.Caterpie) {
-                                    prefs.putInteger("caterpieCapturados", prefs.getInteger("caterpieCapturados", 0) + 1);
-                                } else if (p instanceof puppy.code.pokemones.Rattata) {
-                                    prefs.putInteger("rattataCapturados", prefs.getInteger("rattataCapturados", 0) + 1);
-                                } else if (p instanceof puppy.code.pokemones.Kadabra) {
-                                    prefs.putInteger("kadabraCapturados", prefs.getInteger("kadabraCapturados", 0) + 1);
-                                } else if (p instanceof puppy.code.pokemones.Snorunt) {
-                                    prefs.putInteger("snoruntCapturados", prefs.getInteger("snoruntCapturados", 0) + 1);
-                                } else if (p instanceof puppy.code.pokemones.Glalie) {
-                                    prefs.putInteger("glalieCapturados", prefs.getInteger("glalieCapturados", 0) + 1);
-                                }
-                                
+                                String clave = p.getClaveCapturas();
+                                prefs.putInteger(clave, prefs.getInteger(clave, 0) + 1);
+
                                 prefs.flush();
                             }
                             break;
@@ -319,8 +310,9 @@ public class PantallaJuego implements Screen {
             Gdx.gl.glDisable(GL20.GL_BLEND);
             
             if (this.timerMuerte >= 1.5f) {
-                this.game.setScreen(new PantallaGameOver(this.game, this.puntaje, this.musicaMuerte));
-                this.dispose();
+                PantallaGameOver siguiente = new PantallaGameOver(this.game, this.puntaje, this.musicaMuerte);
+                this.musicaMuerte = null; // La pantalla de Game Over recibe la propiedad.
+                this.game.setScreen(siguiente);
                 return;
             }
         }
@@ -416,6 +408,11 @@ public class PantallaJuego implements Screen {
             this.musicaFondo.stop();
             this.musicaFondo.dispose();
         }
+        if (this.musicaMuerte != null) {
+            this.musicaMuerte.stop();
+            this.musicaMuerte.dispose();
+            this.musicaMuerte = null;
+        }
         if (this.texturaFondoAnterior != null) this.texturaFondoAnterior.dispose();
         if (this.shapeRenderer != null) this.shapeRenderer.dispose();
         this.entrenador.dispose();
@@ -447,6 +444,7 @@ public class PantallaJuego implements Screen {
     }
     
     private void cambiarBiomaAleatorio() {
+        if (this.texturaFondoAnterior != null) this.texturaFondoAnterior.dispose();
         if (this.texturaFondo != null) {
             this.texturaFondoAnterior = this.texturaFondo;
             this.enTransicion = true;
@@ -497,4 +495,34 @@ public class PantallaJuego implements Screen {
     public void setReviviresActivos(Array<Revivir> reviviresActivos) { this.reviviresActivos = reviviresActivos; }
     public float getTimerRevivires() { return timerRevivires; }
     public void setTimerRevivires(float timerRevivires) { this.timerRevivires = timerRevivires; }
+
+    public String[] getRutasBiomas() { return rutasBiomas.clone(); }
+    public void setRutasBiomas(String[] rutasBiomas) {
+        if (rutasBiomas == null || rutasBiomas.length < 2)
+            throw new IllegalArgumentException("Se necesitan al menos dos biomas");
+        for (String ruta : rutasBiomas) {
+            if (ruta == null || ruta.trim().isEmpty()) throw new IllegalArgumentException("Ruta de bioma vacÃ­a");
+        }
+        this.rutasBiomas = rutasBiomas.clone();
+    }
+    public int getUmbralBiomaActual() { return umbralBiomaActual; }
+    public void setUmbralBiomaActual(int umbralBiomaActual) { this.umbralBiomaActual = umbralBiomaActual; }
+    public int getIndiceBiomaActual() { return indiceBiomaActual; }
+    public void setIndiceBiomaActual(int indiceBiomaActual) { this.indiceBiomaActual = indiceBiomaActual; }
+    public Texture getTexturaFondoAnterior() { return texturaFondoAnterior; }
+    public void setTexturaFondoAnterior(Texture texturaFondoAnterior) { this.texturaFondoAnterior = texturaFondoAnterior; }
+    public boolean isEnTransicion() { return enTransicion; }
+    public void setEnTransicion(boolean enTransicion) { this.enTransicion = enTransicion; }
+    public float getAlphaTransicion() { return alphaTransicion; }
+    public void setAlphaTransicion(float alphaTransicion) { this.alphaTransicion = alphaTransicion; }
+    public boolean isEstaPausado() { return estaPausado; }
+    public void setEstaPausado(boolean estaPausado) { this.estaPausado = estaPausado; }
+    public boolean isEnAnimacionMuerte() { return enAnimacionMuerte; }
+    public void setEnAnimacionMuerte(boolean enAnimacionMuerte) { this.enAnimacionMuerte = enAnimacionMuerte; }
+    public float getTimerMuerte() { return timerMuerte; }
+    public void setTimerMuerte(float timerMuerte) { this.timerMuerte = timerMuerte; }
+    public ShapeRenderer getShapeRenderer() { return shapeRenderer; }
+    public void setShapeRenderer(ShapeRenderer shapeRenderer) { this.shapeRenderer = shapeRenderer; }
+    public Music getMusicaMuerte() { return musicaMuerte; }
+    public void setMusicaMuerte(Music musicaMuerte) { this.musicaMuerte = musicaMuerte; }
 }

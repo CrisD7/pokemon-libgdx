@@ -15,6 +15,7 @@ import puppy.code.pokemones.Rattata;
 import puppy.code.pokemones.Snorlax;
 import puppy.code.pokemones.Snorunt;
 import puppy.code.pokemones.Glalie;
+import puppy.code.pokemones.Espeon;
 
 public class GestorSpawns {
     // Instancia única estática y privada (GM-6)
@@ -55,6 +56,7 @@ public class GestorSpawns {
         registrarSpawn(new EntradaSpawn(15, 45, (x, y) -> new Snorlax(x, y), () -> new MovimientoRecto()));
         registrarSpawn(new EntradaSpawn(20, 210, (x, y) -> new Snorunt(x, y), () -> new MovimientoRecto()));
         registrarSpawn(new EntradaSpawn(0, 90, (x, y) -> new Glalie(x, y), () -> new MovimientoRecto()));
+        registrarSpawn(new EntradaSpawn(15, 45, (x, y) -> new Espeon(x, y), () -> new MovimientoRecto()));
     }
 
     public Pokemon intentarGenerarPokemon(float delta, boolean esNevado) {

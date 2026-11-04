@@ -16,6 +16,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import puppy.code.pokemones.Pokemon;
 import puppy.code.spawns.GestorSpawns;
+import puppy.code.pokemones.BossPokemon;
 
 public class PantallaJuego implements Screen {
     private Pokewalk game;
@@ -51,6 +52,8 @@ public class PantallaJuego implements Screen {
     private float timerMuerte = 0f;
     private ShapeRenderer shapeRenderer;
     private Music musicaMuerte;
+    
+    private int proximoPuntajeJefe = 2500;
 
     public PantallaJuego(Pokewalk game) {
         this.game = game;
@@ -124,6 +127,13 @@ public class PantallaJuego implements Screen {
                 this.umbralBiomaActual = umbralCalculado;
                 cambiarBiomaAleatorio();
             }
+            
+            if (this.puntaje >= this.proximoPuntajeJefe) {
+                GestorSpawns.getInstancia().setSpawnsActivos(false);
+                Pokemon jefe = GestorSpawns.getInstancia().generarJefe(this.indiceBiomaActual);
+                this.pokemonesActivos.add(jefe);
+                this.proximoPuntajeJefe += 2500;
+            }
 
             // 3. Spawnear nuevos Pokémon
             boolean biomaNevado = (this.indiceBiomaActual == 2); 
@@ -152,7 +162,15 @@ public class PantallaJuego implements Screen {
                 Pokemon p = iterPoke.next();
                 p.actualizarPosicionObjetivo(centroEntrenadorX, centroEntrenadorY);
                 p.actualizar(delta, this.velocidadFondo);
-                
+                if (p.capturaCompletada()) {
+                    if (p instanceof BossPokemon) {
+                        GestorSpawns.getInstancia().setSpawnsActivos(true);
+                        // Opcional: this.jefeGenerado = false; // si quisieras que vuelva a salir a los 5000 pts
+                    }
+                    p.dispose();
+                    iterPoke.remove();
+                    continue;
+                }
                 if (p.capturaCompletada()) {
                     p.dispose();
                     iterPoke.remove();
@@ -182,8 +200,10 @@ public class PantallaJuego implements Screen {
                 }
 
                 if (!p.isCapturando() && this.entrenador.verificarColision(p)) {
-                    p.dispose();
-                    iterPoke.remove();
+                    if (!(p instanceof BossPokemon)) {
+                        p.dispose();
+                        iterPoke.remove();
+                    }
                     continue;
                 }
                 

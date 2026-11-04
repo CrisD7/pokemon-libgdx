@@ -16,6 +16,8 @@ import puppy.code.pokemones.Snorlax;
 import puppy.code.pokemones.Snorunt;
 import puppy.code.pokemones.Glalie;
 import puppy.code.pokemones.Espeon;
+import puppy.code.pokemones.BossPokemon;
+import puppy.code.movimientos.MovimientoBoss;
 
 public class GestorSpawns {
     // Instancia única estática y privada (GM-6)
@@ -24,6 +26,8 @@ public class GestorSpawns {
     private float timerSpawn;
     private float intervaloSpawn;
     private ArrayList<EntradaSpawn> catalogoSpawns;
+    
+    private boolean spawnsActivos = true;
 
     private GestorSpawns() {
         this.timerSpawn = 0f;
@@ -60,6 +64,8 @@ public class GestorSpawns {
     }
 
     public Pokemon intentarGenerarPokemon(float delta, boolean esNevado) {
+    	if (!spawnsActivos) return null;
+        
         this.timerSpawn += delta;
         if (this.timerSpawn >= this.intervaloSpawn) {
             this.timerSpawn = 0f;
@@ -85,6 +91,36 @@ public class GestorSpawns {
                       .conEstrategia(seleccionada.crearEstrategiaInicial())
                       .conShiny(shiny)
                       .conMultiplicadorVelocidad(multVel)
+                      .build();
+    }
+    
+    public Pokemon generarJefe(int indiceBioma) {
+        String spriteJefe;
+        switch (indiceBioma) {
+            case 0:
+                spriteJefe = "mewtwo.png";
+                break;
+            case 1:
+                spriteJefe = "rayquaza.png";
+                break;
+            case 2:
+                spriteJefe = "regice.png";
+                break;
+            default:
+                spriteJefe = "mewtwo.png";
+        }
+
+        float posX = Gdx.graphics.getWidth() / 2f - 64f;
+        float posY = Gdx.graphics.getHeight() + 20f;
+
+        Pokemon jefeBase = new BossPokemon(posX, posY, spriteJefe);
+        PokemonBuilder builder = new PokemonBuilder();
+        
+        return builder.conPokemonBase(jefeBase)
+                      .enPosicion(posX, posY)
+                      .conEstrategia(new MovimientoBoss())
+                      .conShiny(false)
+                      .conMultiplicadorVelocidad(1.0f)
                       .build();
     }
     
@@ -152,4 +188,6 @@ public class GestorSpawns {
         }
         throw new IllegalStateException("Catálogo incoherente");
     }
+    public boolean isSpawnsActivos() { return spawnsActivos; }
+    public void setSpawnsActivos(boolean spawnsActivos) { this.spawnsActivos = spawnsActivos; }
 }

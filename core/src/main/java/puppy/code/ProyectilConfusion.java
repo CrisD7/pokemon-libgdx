@@ -1,5 +1,6 @@
 package puppy.code;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -9,6 +10,7 @@ import com.badlogic.gdx.math.Rectangle;
 /** Proyectil descendente; crear y actualizar no requiere recursos gráficos. */
 public class ProyectilConfusion implements Colisionable {
     private static Texture texturaGlobal;
+    private static final String RUTA_TEXTURA = "proyectiles/confusion.png";
     private static final float TAMANO = 24f;
     private static final float VELOCIDAD = 320f;
     private final Rectangle hitbox;
@@ -35,16 +37,20 @@ public class ProyectilConfusion implements Colisionable {
 
     public void draw(SpriteBatch batch) {
         if (texturaGlobal == null) {
-            // Recurso generado: no depende de archivos que puedan faltar tras un pull.
-            Pixmap pixmap = new Pixmap(24, 24, Pixmap.Format.RGBA8888);
-            try {
-                pixmap.setColor(0.65f, 0.2f, 1f, 0.8f);
-                pixmap.fillCircle(12, 12, 11);
-                pixmap.setColor(Color.WHITE);
-                pixmap.drawCircle(12, 12, 6);
-                texturaGlobal = new Texture(pixmap);
-            } finally {
-                pixmap.dispose();
+            if (Gdx.files.internal(RUTA_TEXTURA).exists()) {
+                texturaGlobal = new Texture(Gdx.files.internal(RUTA_TEXTURA));
+            } else {
+                // Mantener el proyectil visible hasta que se incorpore la imagen personalizada.
+                Pixmap pixmap = new Pixmap(24, 24, Pixmap.Format.RGBA8888);
+                try {
+                    pixmap.setColor(0.65f, 0.2f, 1f, 0.8f);
+                    pixmap.fillCircle(12, 12, 11);
+                    pixmap.setColor(Color.WHITE);
+                    pixmap.drawCircle(12, 12, 6);
+                    texturaGlobal = new Texture(pixmap);
+                } finally {
+                    pixmap.dispose();
+                }
             }
         }
         batch.draw(texturaGlobal, hitbox.x, hitbox.y, hitbox.width, hitbox.height);

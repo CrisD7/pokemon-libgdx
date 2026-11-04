@@ -23,6 +23,10 @@ public class GestorSpawns {
     // Instancia única estática y privada (GM-6)
     private static GestorSpawns instancia;
 
+    private static final float INTERVALO_INICIAL = 1.2f;
+    private static final float INTERVALO_MINIMO = 0.45f;
+    private static final float REDUCCION_POR_NIVEL = 0.10f;
+
     private float timerSpawn;
     private float intervaloSpawn;
     private ArrayList<EntradaSpawn> catalogoSpawns;
@@ -31,7 +35,7 @@ public class GestorSpawns {
 
     private GestorSpawns() {
         this.timerSpawn = 0f;
-        this.intervaloSpawn = 1.8f;
+        this.intervaloSpawn = INTERVALO_INICIAL;
         this.catalogoSpawns = new ArrayList<>();
 
         inicializarCatalogoPorDefecto();
@@ -126,16 +130,13 @@ public class GestorSpawns {
     
     public void reiniciar() {
         this.timerSpawn = 0f;
-        this.intervaloSpawn = 1.8f;
+        this.intervaloSpawn = INTERVALO_INICIAL;
     }
 
-    // Reduce el intervalo de aparición a medida que sube el puntaje (hasta un mínimo de 0.65 seg)
+    // Reduce el intervalo de aparición a medida que sube el puntaje.
     public void actualizarDificultadSegunPuntaje(int puntajeActual) {
-        float nuevoIntervalo = 1.8f - (puntajeActual / 150) * 0.15f;
-        if (nuevoIntervalo < 0.65f) {
-            nuevoIntervalo = 0.65f;
-        }
-        this.intervaloSpawn = nuevoIntervalo;
+        this.intervaloSpawn = Math.max(INTERVALO_MINIMO,
+                INTERVALO_INICIAL - (puntajeActual / 150) * REDUCCION_POR_NIVEL);
     }
 
     // Getters y Setters estrictos (GM-5)

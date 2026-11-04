@@ -8,7 +8,7 @@ Problemas confirmados en el commit original:
 - Solo se invertían izquierda/derecha, quedando arriba/abajo sin confusión.
 - El puntaje base pasó de 10 a 35 pero el bonus shiny aún comprobaba 10: nunca se aplicaba.
 
-La recuperación incorpora el proyectil completo, con una textura generada sin assets externos, colisiones mediante `Colisionable` y liberación/recarga de la textura al cerrar/reabrir partidas. Los archivos son UTF-8.
+La recuperación incorpora el proyectil completo, con una textura configurable (`assets/proyectiles/confusion.png`) y un círculo generado de respaldo si falta la imagen, colisiones mediante `Colisionable` y liberación/recarga de la textura al cerrar/reabrir partidas. Los archivos son UTF-8.
 
 Espeon conserva el spawn aleatorio del catálogo y su Strategy de movimiento. Dispara hacia abajo si el centro del entrenador está debajo, a un máximo de 500 unidades y alineado a ±35 unidades; el intervalo mínimo es un segundo. La interfaz opcional `EmisorConfusion` permite recoger el disparo sin acoplar la pantalla a una especie. La captura suspende los ataques mediante el Template Method existente.
 
@@ -22,3 +22,5 @@ bash gradlew lwjgl3:smokeTest
 ```
 
 `smokeTest` necesita un contexto gráfico (pantalla o Xvfb). Comprueba controles, expiración, congelamiento, cooldown, captura, shiny, colisiones, pausa y recarga gráfica, además de las regresiones previas. Se actualizaron sus totales de spawn a 135/645: la incorporación previa de Espeon ya había añadido pesos 15/45 sin actualizar esas expectativas.
+
+La frecuencia de aparición comienza ahora en un Pokémon cada 1,2 segundos (antes 1,8), baja 0,10 segundos por cada 150 puntos y llega a un mínimo de 0,45 segundos (antes 0,65).

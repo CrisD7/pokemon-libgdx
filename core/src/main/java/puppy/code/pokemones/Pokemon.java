@@ -43,12 +43,22 @@ public abstract class Pokemon implements puppy.code.Colisionable {
     private int direccionActual;
     private float animTimer;
     private int frameActual;
+    private final int cantidadFrames;
+    private final float intervaloFrame;
 
     private Rectangle hitbox;
     private EstrategiaMovimiento estrategiaMovimiento;
     private boolean colisionActiva;
 
     public Pokemon(float x, float y, float width, float height, float velocidad, int puntosPorCaptura, String rutaSprite) {
+        this(x, y, width, height, velocidad, puntosPorCaptura, rutaSprite, 2, 0.2f);
+    }
+
+    protected Pokemon(float x, float y, float width, float height, float velocidad,
+                      int puntosPorCaptura, String rutaSprite, int cantidadFrames, float intervaloFrame) {
+        if (cantidadFrames != 2 && cantidadFrames != 3) throw new IllegalArgumentException("Cantidad de cuadros inválida");
+        this.cantidadFrames = cantidadFrames;
+        this.intervaloFrame = intervaloFrame;
         this.x = x;
         this.y = y;
         this.width = width;
@@ -106,6 +116,17 @@ public abstract class Pokemon implements puppy.code.Colisionable {
             this.framesDireccion = null;
             return;
         }
+        if (this.cantidadFrames == 3) {
+            int ancho = this.hojaSprites.getWidth() / 3;
+            this.framesDireccion = new TextureRegion[4][3];
+            for (int direccion = 0; direccion < 4; direccion++) {
+                for (int cuadro = 0; cuadro < 3; cuadro++) {
+                    this.framesDireccion[direccion][cuadro] = new TextureRegion(
+                            this.hojaSprites, cuadro * ancho, 0, ancho, this.hojaSprites.getHeight());
+                }
+            }
+            return;
+        }
         int anchoFrame = this.hojaSprites.getWidth() / 2;
         int altoFrame = this.hojaSprites.getHeight() / 4;
         TextureRegion[][] grilla = TextureRegion.split(this.hojaSprites, anchoFrame, altoFrame);
@@ -146,9 +167,9 @@ public abstract class Pokemon implements puppy.code.Colisionable {
 
     private void actualizarAnimacion(float delta) {
         this.animTimer += delta;
-        if (this.animTimer >= 0.2f) {
-            this.animTimer = 0f;
-            this.frameActual = (this.frameActual == 0) ? 1 : 0;
+        if (this.animTimer >= this.intervaloFrame) {
+            this.animTimer %= this.intervaloFrame;
+            this.frameActual = (this.frameActual + 1) % this.cantidadFrames;
         }
         if (this.tiempoAlerta > 0f) {
             this.tiempoAlerta -= delta;

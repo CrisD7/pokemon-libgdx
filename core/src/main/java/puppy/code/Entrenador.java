@@ -6,6 +6,8 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.audio.Sound;
 
@@ -23,6 +25,9 @@ public class Entrenador implements Colisionable {
     private Texture texPasoIzq;
     private Texture texPasoDer;
     private Texture texHielo;
+    private Texture texPatitos;
+    private TextureRegion[] framesPatitos;
+    private float animacionPatitos;
     private Sound sonidoCurar;
     private Sound sonidoCongelar;
     private Sound sonidoGolpe;
@@ -70,6 +75,16 @@ public class Entrenador implements Colisionable {
         this.texPasoIzq = new Texture(Gdx.files.internal(base + "_paso_izq.png"));
         this.texPasoDer = new Texture(Gdx.files.internal(base + "_paso_der.png"));
         this.texHielo = new Texture(Gdx.files.internal("hielo.png"));
+        if (Gdx.files.internal("entrenador/patitos_confusion.png").exists()) {
+            this.texPatitos = new Texture(Gdx.files.internal("entrenador/patitos_confusion.png"));
+            this.texPatitos.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+            int altoFrame = this.texPatitos.getHeight() / 3;
+            this.framesPatitos = new TextureRegion[3];
+            for (int i = 0; i < 3; i++) {
+                this.framesPatitos[i] = new TextureRegion(this.texPatitos, 0,
+                        i * altoFrame, this.texPatitos.getWidth(), altoFrame);
+            }
+        }
 
         this.texQuieto.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
         this.texPasoIzq.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
@@ -99,6 +114,7 @@ public class Entrenador implements Colisionable {
         }
         
         this.tiempoConfusion = Math.max(0f, this.tiempoConfusion - delta);
+        if (isConfundido()) this.animacionPatitos += delta;
         this.estaQuieto = false;
 
         boolean izquierda = Gdx.input.isKeyPressed(Input.Keys.LEFT) || Gdx.input.isKeyPressed(Input.Keys.A);
@@ -184,6 +200,18 @@ public class Entrenador implements Colisionable {
         batch.draw(actual, this.x, this.y, this.width, this.height);
         batch.setColor(Color.WHITE);
         
+        if (isConfundido() && this.framesPatitos != null) {
+            int cuadro = (int) (this.animacionPatitos / 0.3f) % 3;
+            float centroX = this.x + this.width / 2f;
+            float altura = this.y + this.height + 6f;
+            for (int i = 0; i < 3; i++) {
+                float fase = this.animacionPatitos * 2.5f + i * MathUtils.PI2 / 3f;
+                batch.draw(this.framesPatitos[(cuadro + i) % 3],
+                        centroX - 12f + MathUtils.cos(fase) * 27f,
+                        altura + MathUtils.sin(fase) * 6f, 24f, 24f);
+            }
+        }
+
         if (this.congelado) {
             batch.setColor(1f, 1f, 1f, 0.8f); // 80% de opacidad
             batch.draw(this.texHielo, this.x - 10f, this.y - 10f, this.width + 20f, this.height + 20f);
@@ -253,6 +281,7 @@ public class Entrenador implements Colisionable {
         if (this.texPasoIzq != null) this.texPasoIzq.dispose();
         if (this.texPasoDer != null) this.texPasoDer.dispose();
         if (this.texHielo != null) this.texHielo.dispose();
+        if (this.texPatitos != null) this.texPatitos.dispose();
         if (this.sonidoGolpe != null) this.sonidoGolpe.dispose();
         if (this.sonidoCongelar != null) this.sonidoCongelar.dispose();
         if (this.sonidoCurar != null) this.sonidoCurar.dispose();

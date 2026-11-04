@@ -62,7 +62,8 @@ public final class RevisionSmokeTest extends Pokewalk {
         GestorSpawns gestor = GestorSpawns.getInstancia();
         ArrayList<EntradaSpawn> original = gestor.getCatalogoSpawns();
         comprobar(gestor == GestorSpawns.getInstancia(), "Singleton");
-        comprobar(gestor.getPesoTotal() == 135 && gestor.getPesoTotal(true) == 645, "Totales por bioma");
+        comprobar(gestor.getPesoTotal() == (Gdx.files.internal("pokemones/sudowoodo.png").exists() ? 150 : 135)
+                && gestor.getPesoTotal(true) == (Gdx.files.internal("pokemones/sudowoodo.png").exists() ? 675 : 645), "Totales por bioma");
         try {
             for (boolean nevado : new boolean[] {false, true}) {
                 for (EntradaSpawn entrada : original) {
@@ -92,7 +93,8 @@ public final class RevisionSmokeTest extends Pokewalk {
             ArrayList<EntradaSpawn> copia = gestor.getCatalogoSpawns();
             copia.get(0).setPesoProbabilidad(999);
             copia.clear();
-            comprobar(gestor.getPesoTotal() == 135 && gestor.getPesoTotal(true) == 645, "Copias defensivas profundas");
+            comprobar(gestor.getPesoTotal() == (Gdx.files.internal("pokemones/sudowoodo.png").exists() ? 150 : 135)
+                && gestor.getPesoTotal(true) == (Gdx.files.internal("pokemones/sudowoodo.png").exists() ? 675 : 645), "Copias defensivas profundas");
             rechazar(IllegalArgumentException.class, () -> gestor.setPesoTotal(1));
             rechazar(IllegalArgumentException.class, () -> gestor.seleccionarEntrada(false, 0));
             rechazar(IllegalArgumentException.class, () -> original.get(0).setPesoProbabilidad(-1));
@@ -100,7 +102,8 @@ public final class RevisionSmokeTest extends Pokewalk {
                     puppy.code.movimientos.MovimientoRecto::new);
             gestor.registrarSpawn(nueva);
             nueva.setPesoProbabilidad(999);
-            comprobar(gestor.getPesoTotal() == 137 && gestor.getPesoTotal(true) == 648, "Registro extensible protegido");
+            comprobar(gestor.getPesoTotal() == (Gdx.files.internal("pokemones/sudowoodo.png").exists() ? 152 : 137)
+                    && gestor.getPesoTotal(true) == (Gdx.files.internal("pokemones/sudowoodo.png").exists() ? 678 : 648), "Registro extensible protegido");
             gestor.setCatalogoSpawns(new ArrayList<>());
             comprobar(gestor.intentarGenerarPokemon(2f, false) == null, "Catálogo vacío sin excepción");
         } finally {

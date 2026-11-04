@@ -1,6 +1,7 @@
 package puppy.code;
 
 import java.util.ArrayList;
+import puppy.code.pokemones.Espeon;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import java.util.Iterator;
@@ -31,6 +32,7 @@ public class PantallaJuego implements Screen {
     private Entrenador entrenador;
     private ArrayList<Pokemon> pokemonesActivos;
     private ArrayList<Pokeball> pokeballsActivas;
+    private ArrayList<ProyectilConfusion> proyectilesConfusion;
     
     private float timerDisparo;
     private float tiempoRecargaDisparo = 0.70f; // Cooldown ligeramente mayor entre PokÃ©balls
@@ -85,6 +87,7 @@ public class PantallaJuego implements Screen {
         this.entrenador = new Entrenador(Gdx.graphics.getWidth() / 2f - 48f, 100f, this.game.getPersonajeSeleccionado());
         this.pokemonesActivos = new ArrayList<>();
         this.pokeballsActivas = new ArrayList<>();
+        this.proyectilesConfusion = new ArrayList<>();
         this.timerDisparo = 0f;
         this.puntaje = 0;
         this.reviviresActivos = new Array<>();
@@ -127,9 +130,23 @@ public class PantallaJuego implements Screen {
 
             // 3. Spawnear nuevos PokÃ©mon
             boolean biomaNevado = (this.indiceBiomaActual == 2); 
-            Pokemon nuevo = GestorSpawns.getInstancia().intentarGenerarPokemon(delta, biomaNevado);
             
+            Pokemon nuevo = GestorSpawns.getInstancia().intentarGenerarPokemon(delta, biomaNevado);
+
             if (nuevo != null) {
+                if (nuevo instanceof Espeon) {
+                    float centroEntrenador = this.entrenador.getX()
+                            + this.entrenador.getWidth() / 2f;
+
+                    float nuevaX = centroEntrenador - nuevo.getWidth() / 2f;
+
+                    // Evitar que aparezca fuera de los límites horizontales
+                    nuevaX = Math.max(0, Math.min(nuevaX,
+                            Gdx.graphics.getWidth() - nuevo.getWidth()));
+
+                    nuevo.setX(nuevaX);
+                }
+
                 this.pokemonesActivos.add(nuevo);
             }
 
@@ -152,6 +169,16 @@ public class PantallaJuego implements Screen {
                 Pokemon p = iterPoke.next();
                 p.actualizarPosicionObjetivo(centroEntrenadorX, centroEntrenadorY);
                 p.actualizar(delta, this.velocidadFondo);
+                
+                if (p instanceof Espeon) {
+                    Espeon espeon = (Espeon) p;
+
+                    ProyectilConfusion nuevoProyectil = espeon.consumirProyectil();
+
+                    if (nuevoProyectil != null) {
+                        this.proyectilesConfusion.add(nuevoProyectil);
+                    }
+                }
                 
                 if (p.capturaCompletada()) {
                     p.dispose();
@@ -190,6 +217,27 @@ public class PantallaJuego implements Screen {
                 if (p.salioDePantalla()) {
                     p.dispose();
                     iterPoke.remove();
+                }
+            }
+            
+            // Actualizar proyectiles de Confusión
+            Iterator<ProyectilConfusion> iterProyectiles = this.proyectilesConfusion.iterator();
+
+            while (iterProyectiles.hasNext()) {
+                ProyectilConfusion proyectil = iterProyectiles.next();
+
+                proyectil.update(delta);
+
+                // Eliminar si sale de la pantalla
+                if (proyectil.salioDePantalla()) {
+                    iterProyectiles.remove();
+                    continue;
+                }
+
+                // Comprobar impacto contra el entrenador
+                if (proyectil.verificarColision(this.entrenador)) {
+                	this.entrenador.recibirConfusion(4f);
+                    iterProyectiles.remove();
                 }
             }
             
@@ -274,6 +322,12 @@ public class PantallaJuego implements Screen {
         }
         for (Pokeball ball : this.pokeballsActivas) {
             ball.draw(this.game.getBatch());
+        }
+        for (ProyectilConfusion proyectil : this.proyectilesConfusion) {
+            proyectil.draw(this.game.getBatch());
+        }
+        for (ProyectilConfusion proyectil : this.proyectilesConfusion) {
+            proyectil.draw(this.game.getBatch());
         }
         for (Revivir r : this.reviviresActivos) {
             r.draw(this.game.getBatch());
@@ -419,6 +473,9 @@ public class PantallaJuego implements Screen {
         for (Pokemon p : this.pokemonesActivos) {
             p.dispose();
         }
+        
+        ProyectilConfusion.disposeTexturaGlobal();
+        
         for (Revivir r : this.reviviresActivos) {
             r.dispose();
         }

@@ -22,7 +22,7 @@ public class Espeon extends Pokemon implements EmisorConfusion {
         float centroX = getX() + getWidth() / 2f;
         float distanciaY = getY() - getObjetivoY();
         if (isColisionActiva() && distanciaY > 0f && distanciaY <= 500f
-                && Math.abs(getObjetivoX() - centroX) <= 35f
+                && Math.abs(getObjetivoX() - centroX) <= 55f
                 && tiempoDisparo >= INTERVALO_DISPARO && proyectilPendiente == null) {
             proyectilPendiente = new ProyectilConfusion(centroX, getY());
             tiempoDisparo = 0f;

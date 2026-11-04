@@ -153,7 +153,7 @@ public abstract class Pokemon implements puppy.code.Colisionable {
         actualizarHitbox();
     }
 
-    private void bajarConEscenario(float delta, float velocidadFondo) {
+    protected void bajarConEscenario(float delta, float velocidadFondo) {
         this.y -= velocidadFondo * delta;
     }
 

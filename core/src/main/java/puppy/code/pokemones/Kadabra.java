@@ -52,10 +52,18 @@ public class Kadabra extends Pokemon {
     }
 
     @Override
+    protected void bajarConEscenario(float delta, float velocidadFondo) {
+        // El portal permanece en el punto del teletransporte hasta que Kadabra pueda moverse.
+        if (!this.posicionFijada || this.estadoActual == ESTADO_ACTIVO) {
+            super.bajarConEscenario(delta, velocidadFondo);
+        }
+    }
+
+    @Override
     protected void comportamientoEspecial(float delta) {
         if (!this.posicionFijada && (getObjetivoX() != 0 || getObjetivoY() != 0)) {
             setX(getObjetivoX() - (getWidth() / 2f));
-            setY(getObjetivoY() - (getHeight() / 2f));
+            setY(Math.max(0f, getObjetivoY() - getHeight() / 2f));
             this.posicionFijada = true;
         }
 

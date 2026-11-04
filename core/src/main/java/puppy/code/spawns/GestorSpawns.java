@@ -66,10 +66,7 @@ public class GestorSpawns {
         registrarSpawn(new EntradaSpawn(20, 210, (x, y) -> new Snorunt(x, y), () -> new MovimientoRecto()));
         registrarSpawn(new EntradaSpawn(0, 90, (x, y) -> new Glalie(x, y), () -> new MovimientoRecto()));
         registrarSpawn(new EntradaSpawn(15, 45, (x, y) -> new Espeon(x, y), () -> new MovimientoRecto()));
-        // La especie entra al sorteo cuando su imagen está instalada.
-        if (Gdx.files.internal("pokemones/sudowoodo.png").exists()) {
-            registrarSpawn(new EntradaSpawn(15, 30, Sudowoodo::new, MovimientoEstatico::new));
-        }
+        registrarSpawn(new EntradaSpawn(15, 0, Sudowoodo::new, MovimientoEstatico::new));
     }
 
     public Pokemon intentarGenerarPokemon(float delta, boolean esNevado) {

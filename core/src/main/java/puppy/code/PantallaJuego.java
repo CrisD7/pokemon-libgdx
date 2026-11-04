@@ -33,6 +33,8 @@ public class PantallaJuego implements Screen {
     private ArrayList<Pokemon> pokemonesActivos;
     private ArrayList<Pokeball> pokeballsActivas;
     
+    private final ArrayList<ProyectilConfusion> proyectilesConfusion = new ArrayList<>();
+
     private float timerDisparo;
     private float tiempoRecargaDisparo = 0.70f; // Cooldown ligeramente mayor entre Pokéballs
     private int puntaje;
@@ -162,6 +164,10 @@ public class PantallaJuego implements Screen {
                 Pokemon p = iterPoke.next();
                 p.actualizarPosicionObjetivo(centroEntrenadorX, centroEntrenadorY);
                 p.actualizar(delta, this.velocidadFondo);
+                if (p instanceof EmisorConfusion) {
+                    ProyectilConfusion proyectil = ((EmisorConfusion) p).consumirProyectil();
+                    if (proyectil != null) this.proyectilesConfusion.add(proyectil);
+                }
                 if (p.capturaCompletada()) {
                     if (p instanceof BossPokemon) {
                         GestorSpawns.getInstancia().setSpawnsActivos(true);
@@ -213,6 +219,18 @@ public class PantallaJuego implements Screen {
                 }
             }
             
+            Iterator<ProyectilConfusion> iterProyectiles = this.proyectilesConfusion.iterator();
+            while (iterProyectiles.hasNext()) {
+                ProyectilConfusion proyectil = iterProyectiles.next();
+                proyectil.update(delta);
+                if (proyectil.verificarColision(this.entrenador)) {
+                    this.entrenador.recibirConfusion(4f);
+                    iterProyectiles.remove();
+                } else if (proyectil.salioDePantalla()) {
+                    iterProyectiles.remove();
+                }
+            }
+
             // Logica de Revivir
             this.timerRevivires += delta;
             if (this.timerRevivires >= 3.5f) { 
@@ -294,6 +312,9 @@ public class PantallaJuego implements Screen {
         }
         for (Pokeball ball : this.pokeballsActivas) {
             ball.draw(this.game.getBatch());
+        }
+        for (ProyectilConfusion proyectil : this.proyectilesConfusion) {
+            proyectil.draw(this.game.getBatch());
         }
         for (Revivir r : this.reviviresActivos) {
             r.draw(this.game.getBatch());
@@ -409,6 +430,10 @@ public class PantallaJuego implements Screen {
         }
         this.game.getBatch().setColor(Color.WHITE);
 
+        if (this.entrenador.isConfundido()) {
+            this.fuentePuntaje.draw(this.game.getBatch(), "CONFUSION", 20f, posY - 12f);
+        }
+
         this.fuentePuntaje.draw(this.game.getBatch(), "Puntos: " + this.puntaje, 
                                 Gdx.graphics.getWidth() - 200f, Gdx.graphics.getHeight() - 25f);
     }
@@ -436,6 +461,8 @@ public class PantallaJuego implements Screen {
         if (this.texturaFondoAnterior != null) this.texturaFondoAnterior.dispose();
         if (this.shapeRenderer != null) this.shapeRenderer.dispose();
         this.entrenador.dispose();
+        this.proyectilesConfusion.clear();
+        ProyectilConfusion.disposeTexturaGlobal();
         for (Pokemon p : this.pokemonesActivos) {
             p.dispose();
         }

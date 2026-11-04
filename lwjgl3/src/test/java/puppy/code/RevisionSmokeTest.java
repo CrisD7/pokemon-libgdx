@@ -31,6 +31,7 @@ public final class RevisionSmokeTest extends Pokewalk {
             super.create();
             probarCatalogo();
             probarEntidades();
+            probarConfusion();
             probarPantallas();
             System.out.println("REGRESION OK: " + comprobaciones + " comprobaciones");
         } catch (Throwable error) {
@@ -61,7 +62,7 @@ public final class RevisionSmokeTest extends Pokewalk {
         GestorSpawns gestor = GestorSpawns.getInstancia();
         ArrayList<EntradaSpawn> original = gestor.getCatalogoSpawns();
         comprobar(gestor == GestorSpawns.getInstancia(), "Singleton");
-        comprobar(gestor.getPesoTotal() == 120 && gestor.getPesoTotal(true) == 600, "Totales por bioma");
+        comprobar(gestor.getPesoTotal() == 135 && gestor.getPesoTotal(true) == 645, "Totales por bioma");
         try {
             for (boolean nevado : new boolean[] {false, true}) {
                 for (EntradaSpawn entrada : original) {
@@ -91,7 +92,7 @@ public final class RevisionSmokeTest extends Pokewalk {
             ArrayList<EntradaSpawn> copia = gestor.getCatalogoSpawns();
             copia.get(0).setPesoProbabilidad(999);
             copia.clear();
-            comprobar(gestor.getPesoTotal() == 120 && gestor.getPesoTotal(true) == 600, "Copias defensivas profundas");
+            comprobar(gestor.getPesoTotal() == 135 && gestor.getPesoTotal(true) == 645, "Copias defensivas profundas");
             rechazar(IllegalArgumentException.class, () -> gestor.setPesoTotal(1));
             rechazar(IllegalArgumentException.class, () -> gestor.seleccionarEntrada(false, 0));
             rechazar(IllegalArgumentException.class, () -> original.get(0).setPesoProbabilidad(-1));
@@ -99,7 +100,7 @@ public final class RevisionSmokeTest extends Pokewalk {
                     puppy.code.movimientos.MovimientoRecto::new);
             gestor.registrarSpawn(nueva);
             nueva.setPesoProbabilidad(999);
-            comprobar(gestor.getPesoTotal() == 122 && gestor.getPesoTotal(true) == 603, "Registro extensible protegido");
+            comprobar(gestor.getPesoTotal() == 137 && gestor.getPesoTotal(true) == 648, "Registro extensible protegido");
             gestor.setCatalogoSpawns(new ArrayList<>());
             comprobar(gestor.intentarGenerarPokemon(2f, false) == null, "Catálogo vacío sin excepción");
         } finally {
@@ -169,6 +170,80 @@ public final class RevisionSmokeTest extends Pokewalk {
         comprobar(Pokeball.getRegionPokeball() != null, "Recarga después de liberar");
     }
 
+    private void probarConfusion() {
+        Espeon espeon = new Espeon(300, 500);
+        Entrenador entrenador = new Entrenador(300, 100);
+        com.badlogic.gdx.Input entradaOriginal = Gdx.input;
+        final int[] tecla = {com.badlogic.gdx.Input.Keys.A};
+        try {
+            Gdx.input = (com.badlogic.gdx.Input) java.lang.reflect.Proxy.newProxyInstance(
+                    com.badlogic.gdx.Input.class.getClassLoader(), new Class<?>[] {com.badlogic.gdx.Input.class},
+                    (proxy, metodo, args) -> {
+                        if (metodo.getName().equals("isKeyPressed")) return (int) args[0] == tecla[0];
+                        throw new UnsupportedOperationException(metodo.getName());
+                    });
+            entrenador.update(0.1f, 150f);
+            comprobar(entrenador.getX() < 300, "A mueve a la izquierda sin confusión");
+            entrenador.recibirConfusion(4f);
+            float x = entrenador.getX();
+            entrenador.update(0.1f, 150f);
+            comprobar(entrenador.getX() > x, "Confusión invierte A");
+            tecla[0] = com.badlogic.gdx.Input.Keys.RIGHT;
+            x = entrenador.getX();
+            entrenador.update(0.1f, 150f);
+            comprobar(entrenador.getX() < x, "Confusión invierte flechas");
+            tecla[0] = com.badlogic.gdx.Input.Keys.W;
+            float y = entrenador.getY();
+            entrenador.update(0.1f, 150f);
+            comprobar(entrenador.getY() < y && entrenador.isEstaQuieto(), "W invertida conserva detenerse");
+            tecla[0] = com.badlogic.gdx.Input.Keys.S;
+            y = entrenador.getY();
+            entrenador.update(0.1f, 150f);
+            comprobar(entrenador.getY() > y, "S invertida avanza");
+            entrenador.recibirCongelamiento(2f);
+            x = entrenador.getX(); y = entrenador.getY();
+            entrenador.update(0.1f, 150f);
+            comprobar(entrenador.getX() == x && entrenador.getY() == y, "Congelamiento conserva prioridad");
+            tecla[0] = -1;
+            entrenador.update(4f, 150f);
+            comprobar(!entrenador.isConfundido(), "Confusión expira");
+            entrenador.recibirConfusion(Float.NaN);
+            comprobar(!entrenador.isConfundido(), "Duración inválida no deja confusión permanente");
+
+            espeon.actualizarPosicionObjetivo(350, 100);
+            espeon.actualizar(0f, 0f);
+            ProyectilConfusion proyectil = espeon.consumirProyectil();
+            comprobar(proyectil != null && espeon.consumirProyectil() == null, "Emite una sola vez");
+            espeon.actualizar(0.5f, 0f);
+            comprobar(espeon.consumirProyectil() == null, "Cooldown evita disparo prematuro");
+            espeon.actualizarPosicionObjetivo(500, 100);
+            espeon.actualizar(1f, 0f);
+            comprobar(espeon.consumirProyectil() == null, "Fuera de alineación no dispara");
+            espeon.actualizarPosicionObjetivo(350, 100);
+            espeon.actualizar(0f, 0f);
+            comprobar(espeon.consumirProyectil() != null, "Vuelve a disparar tras cooldown");
+            espeon.setEsShiny(true);
+            espeon.actualizar(0f, 0f);
+            comprobar(espeon.getPuntosPorCaptura() == 70, "Bonus shiny de Espeon");
+            espeon.recibirImpactoPokeball();
+            espeon.actualizar(1f, 0f);
+            comprobar(espeon.consumirProyectil() == null, "Captura detiene ataques por Template Method");
+            proyectil = new ProyectilConfusion(entrenador.getHitbox().x + 12f,
+                    entrenador.getHitbox().y + 24f);
+            comprobar(proyectil.verificarColision(entrenador), "Impacto usa Colisionable");
+            getBatch().begin(); proyectil.draw(getBatch()); getBatch().end();
+            ProyectilConfusion.disposeTexturaGlobal();
+            getBatch().begin(); proyectil.draw(getBatch()); getBatch().end();
+            comprobar(true, "Textura recarga después de liberar");
+            proyectil.update(10f);
+            comprobar(proyectil.salioDePantalla(), "Proyectil fuera de pantalla se elimina");
+        } finally {
+            Gdx.input = entradaOriginal;
+            entrenador.dispose(); espeon.dispose();
+            ProyectilConfusion.disposeTexturaGlobal();
+        }
+    }
+
     private void probarPantallas() {
         PantallaMenu menu = (PantallaMenu) getScreen();
         menu.render(0.016f);
@@ -178,6 +253,21 @@ public final class RevisionSmokeTest extends Pokewalk {
         comprobar(fondoMenu.getTextureObjectHandle() == 0, "Transición libera menú");
         setScreen(juego);
         comprobar(juego.getTexturaFondo().getTextureObjectHandle() != 0, "Misma pantalla no se libera");
+        Espeon atacante = new Espeon(juego.getEntrenador().getX()
+                + juego.getEntrenador().getWidth() / 2f - 50f, 300f);
+        juego.getPokemonesActivos().add(atacante);
+        juego.render(0.1f);
+        juego.setEstaPausado(true);
+        juego.render(1f);
+        comprobar(!juego.getEntrenador().isConfundido(), "Pausa congela proyectil");
+        juego.setEstaPausado(false);
+        juego.render(0.15f);
+        comprobar(juego.getEntrenador().isConfundido(), "Impacto real aplica confusión en pantalla");
+        float restante = juego.getEntrenador().getTiempoConfusion();
+        juego.setEstaPausado(true);
+        juego.render(1f);
+        comprobar(juego.getEntrenador().getTiempoConfusion() == restante, "Pausa congela duración del efecto");
+        juego.setEstaPausado(false);
         juego.getPokemonesActivos().add(new Snorlax(0, 400));
         juego.getReviviresActivos().add(new Revivir(0, 400, true));
         juego.render(0.016f);

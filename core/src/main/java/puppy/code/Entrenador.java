@@ -39,6 +39,8 @@ public class Entrenador implements Colisionable {
     private boolean congelado;
     private float tiempoCongelado;
     
+    private float tiempoConfusion;
+
     private Rectangle hitbox;
 
     public Entrenador(float startX, float startY) {
@@ -96,22 +98,36 @@ public class Entrenador implements Colisionable {
             }
         }
         
+        this.tiempoConfusion = Math.max(0f, this.tiempoConfusion - delta);
         this.estaQuieto = false;
+
+        boolean izquierda = Gdx.input.isKeyPressed(Input.Keys.LEFT) || Gdx.input.isKeyPressed(Input.Keys.A);
+        boolean derecha = Gdx.input.isKeyPressed(Input.Keys.RIGHT) || Gdx.input.isKeyPressed(Input.Keys.D);
+        boolean arriba = Gdx.input.isKeyPressed(Input.Keys.UP) || Gdx.input.isKeyPressed(Input.Keys.W);
+        boolean abajo = Gdx.input.isKeyPressed(Input.Keys.DOWN) || Gdx.input.isKeyPressed(Input.Keys.S);
+        if (isConfundido()) {
+            boolean temporal = izquierda;
+            izquierda = derecha;
+            derecha = temporal;
+            temporal = arriba;
+            arriba = abajo;
+            abajo = temporal;
+        }
 
         if (!this.congelado) {
             // Si se presiona ABAJO, tiene prioridad absoluta y se anula cualquier otro movimiento
-            if (Gdx.input.isKeyPressed(Input.Keys.DOWN) || Gdx.input.isKeyPressed(Input.Keys.S)) {
+            if (abajo) {
                 this.y -= velocidadFondo * delta;
                 this.estaQuieto = true;
             } else {
                 // Movimiento lateral y hacia arriba solo si NO se está presionando abajo
-                if (Gdx.input.isKeyPressed(Input.Keys.LEFT) || Gdx.input.isKeyPressed(Input.Keys.A)) {
+                if (izquierda) {
                     this.x -= this.velocidad * delta;
                 }
-                if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) || Gdx.input.isKeyPressed(Input.Keys.D)) {
+                if (derecha) {
                     this.x += this.velocidad * delta;
                 }
-                if (Gdx.input.isKeyPressed(Input.Keys.UP) || Gdx.input.isKeyPressed(Input.Keys.W)) {
+                if (arriba) {
                     this.y += (this.velocidad * 0.6f) * delta;
                 }
             }
@@ -141,6 +157,14 @@ public class Entrenador implements Colisionable {
 
         this.hitbox.setPosition(this.x + 20f, this.y + 10f);
     }
+
+    public void recibirConfusion(float duracion) {
+        if (!Float.isFinite(duracion) || duracion <= 0f) return;
+        this.tiempoConfusion = Math.max(this.tiempoConfusion, duracion);
+    }
+
+    public boolean isConfundido() { return this.tiempoConfusion > 0f; }
+    public float getTiempoConfusion() { return this.tiempoConfusion; }
 
     public void draw(SpriteBatch batch) {
         if (this.herido) {

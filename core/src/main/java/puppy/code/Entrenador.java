@@ -39,9 +39,6 @@ public class Entrenador implements Colisionable {
     private boolean congelado;
     private float tiempoCongelado;
     
-    private boolean confundido = false;
-    private float tiempoConfusion = 0f;
-    
     private Rectangle hitbox;
 
     public Entrenador(float startX, float startY) {
@@ -99,15 +96,6 @@ public class Entrenador implements Colisionable {
             }
         }
         
-        if (this.confundido) {
-            this.tiempoConfusion -= delta;
-
-            if (this.tiempoConfusion <= 0f) {
-                this.confundido = false;
-                this.tiempoConfusion = 0f;
-            }
-        }
-        
         this.estaQuieto = false;
 
         if (!this.congelado) {
@@ -117,27 +105,12 @@ public class Entrenador implements Colisionable {
                 this.estaQuieto = true;
             } else {
                 // Movimiento lateral y hacia arriba solo si NO se estÃ¡ presionando abajo
-            	
-            	boolean izquierda = Gdx.input.isKeyPressed(Input.Keys.LEFT)
-            	        || Gdx.input.isKeyPressed(Input.Keys.A);
-
-            	boolean derecha = Gdx.input.isKeyPressed(Input.Keys.RIGHT)
-            	        || Gdx.input.isKeyPressed(Input.Keys.D);
-
-            	// Invertir controles cuando está confundido
-            	if (this.confundido) {
-            	    boolean temporal = izquierda;
-            	    izquierda = derecha;
-            	    derecha = temporal;
-            	}
-
-            	if (izquierda) {
-            	    this.x -= this.velocidad * delta;
-            	}
-
-            	if (derecha) {
-            	    this.x += this.velocidad * delta;
-            	}
+                if (Gdx.input.isKeyPressed(Input.Keys.LEFT) || Gdx.input.isKeyPressed(Input.Keys.A)) {
+                    this.x -= this.velocidad * delta;
+                }
+                if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) || Gdx.input.isKeyPressed(Input.Keys.D)) {
+                    this.x += this.velocidad * delta;
+                }
                 if (Gdx.input.isKeyPressed(Input.Keys.UP) || Gdx.input.isKeyPressed(Input.Keys.W)) {
                     this.y += (this.velocidad * 0.6f) * delta;
                 }
@@ -169,11 +142,6 @@ public class Entrenador implements Colisionable {
         this.hitbox.setPosition(this.x + 20f, this.y + 10f);
     }
 
-    public void recibirConfusion(float duracion) {
-        this.confundido = true;
-        this.tiempoConfusion = duracion;
-    }
-    
     public void draw(SpriteBatch batch) {
         if (this.herido) {
             // Parpadeo rojizo durante la invulnerabilidad temporal

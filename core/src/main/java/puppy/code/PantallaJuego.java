@@ -64,6 +64,7 @@ public class PantallaJuego implements Screen {
     private int proximoPuntajeJefe = 2500;
     
     private float velocidadOriginalEntrenador;
+    private float timerAcumuladoHielo = 0f;
 
     public PantallaJuego(Pokewalk game) {
         this.game = game;
@@ -189,7 +190,7 @@ public class PantallaJuego implements Screen {
                         movRegice.consumirRayo();
                     }
                     if (movRegice.isDebeGenerarZona()) {
-                        this.zonasHielo.add(new ZonaHielo(centroEntrenadorX - 130f, this.entrenador.getY() - 20f));
+                        this.zonasHielo.add(new ZonaHielo(centroEntrenadorX - 170f, this.entrenador.getY() - 20f));
                         movRegice.consumirZona();
                     }
                 }
@@ -292,10 +293,17 @@ public class PantallaJuego implements Screen {
 
             if (pisandoHielo && !this.entrenador.isCongelado()) {
                 this.entrenador.setVelocidad(this.velocidadOriginalEntrenador * 0.4f);
-                this.tiempoRecargaDisparo = this.tiempoRecargaDisparoBase * 2.0f; 
+                this.tiempoRecargaDisparo = this.tiempoRecargaDisparoBase * 2.0f;
+                
+                this.timerAcumuladoHielo += delta;
+                if (this.timerAcumuladoHielo >= 1.25f) {
+                    this.entrenador.recibirCongelamiento(2.25f);
+                    this.timerAcumuladoHielo = 0f;
+                }
             } else {
                 this.entrenador.setVelocidad(this.velocidadOriginalEntrenador); 
-                this.tiempoRecargaDisparo = this.tiempoRecargaDisparoBase; 
+                this.tiempoRecargaDisparo = this.tiempoRecargaDisparoBase;
+                this.timerAcumuladoHielo = 0f;
             }
 
             // Logica de Revivir

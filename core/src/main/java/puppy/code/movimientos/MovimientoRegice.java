@@ -87,4 +87,7 @@ public class MovimientoRegice implements EstrategiaMovimiento {
     public void consumirRayo() { this.debeLanzarRayo = false; }
     public boolean isDebeGenerarZona() { return debeGenerarZona; }
     public void consumirZona() { this.debeGenerarZona = false; }
+    public int getEstado() {
+        return this.estado;
+    }
 }

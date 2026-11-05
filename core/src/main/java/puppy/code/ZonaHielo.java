@@ -9,9 +9,9 @@ import com.badlogic.gdx.math.Rectangle;
 public class ZonaHielo {
     private static Texture texturaGlobal;
     private float x, y;
-    private float ancho = 260f;
-    private float alto = 140f;
-    private float tiempoVida = 5.0f;
+    private float ancho = 340f;
+    private float alto = 160f;
+    private float tiempoVida = 7.0f;
     private Rectangle hitbox;
 
     public ZonaHielo(float x, float y) {

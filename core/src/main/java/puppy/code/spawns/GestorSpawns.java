@@ -17,8 +17,6 @@ import puppy.code.pokemones.Snorunt;
 import puppy.code.pokemones.Sudowoodo;
 import puppy.code.pokemones.Glalie;
 import puppy.code.pokemones.Espeon;
-import puppy.code.pokemones.BossPokemon;
-import puppy.code.movimientos.MovimientoBoss;
 
 public class GestorSpawns {
     // Instancia única estática y privada (GM-6)
@@ -101,33 +99,9 @@ public class GestorSpawns {
     }
     
     public Pokemon generarJefe(int indiceBioma) {
-        String spriteJefe;
-        switch (indiceBioma) {
-            case 0:
-                spriteJefe = "mewtwo.png";
-                break;
-            case 1:
-                spriteJefe = "rayquaza.png";
-                break;
-            case 2:
-                spriteJefe = "regice.png";
-                break;
-            default:
-                spriteJefe = "mewtwo.png";
-        }
-
         float posX = Gdx.graphics.getWidth() / 2f - 64f;
         float posY = Gdx.graphics.getHeight() + 20f;
-
-        Pokemon jefeBase = new BossPokemon(posX, posY, spriteJefe);
-        PokemonBuilder builder = new PokemonBuilder();
-        
-        return builder.conPokemonBase(jefeBase)
-                      .enPosicion(posX, posY)
-                      .conEstrategia(new MovimientoBoss())
-                      .conShiny(false)
-                      .conMultiplicadorVelocidad(1.0f)
-                      .build();
+        return new puppy.code.pokemones.Regice(posX, posY);
     }
     
     public void reiniciar() {

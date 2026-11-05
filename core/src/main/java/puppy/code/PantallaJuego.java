@@ -17,6 +17,8 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import puppy.code.pokemones.Pokemon;
 import puppy.code.spawns.GestorSpawns;
 import puppy.code.pokemones.BossPokemon;
+import puppy.code.movimientos.MovimientoRegice;
+import puppy.code.movimientos.EstrategiaMovimiento;
 
 public class PantallaJuego implements Screen {
     private Pokewalk game;
@@ -34,6 +36,9 @@ public class PantallaJuego implements Screen {
     private ArrayList<Pokeball> pokeballsActivas;
     
     private final ArrayList<ProyectilConfusion> proyectilesConfusion = new ArrayList<>();
+    
+    private final ArrayList<ProyectilHielo> proyectilesHielo = new ArrayList<>();
+    private final ArrayList<ZonaHielo> zonasHielo = new ArrayList<>();
 
     private float timerDisparo;
     private float tiempoRecargaDisparo = 0.70f; // Cooldown ligeramente mayor entre Pokéballs
@@ -56,6 +61,8 @@ public class PantallaJuego implements Screen {
     private Music musicaMuerte;
     
     private int proximoPuntajeJefe = 2500;
+    
+    private float velocidadOriginalEntrenador;
 
     public PantallaJuego(Pokewalk game) {
         this.game = game;
@@ -88,6 +95,7 @@ public class PantallaJuego implements Screen {
         this.fondoY2 = altoEscalado;
         
         this.entrenador = new Entrenador(Gdx.graphics.getWidth() / 2f - 48f, 100f, this.game.getPersonajeSeleccionado());
+        this.velocidadOriginalEntrenador = this.entrenador.getVelocidad();
         this.pokemonesActivos = new ArrayList<>();
         this.pokeballsActivas = new ArrayList<>();
         this.timerDisparo = 0f;
@@ -164,14 +172,28 @@ public class PantallaJuego implements Screen {
                 Pokemon p = iterPoke.next();
                 p.actualizarPosicionObjetivo(centroEntrenadorX, centroEntrenadorY);
                 p.actualizar(delta, this.velocidadFondo);
+                
+                EstrategiaMovimiento estrategia = p.getEstrategiaMovimiento();
+                if (estrategia instanceof MovimientoRegice) {
+                    MovimientoRegice movRegice = (MovimientoRegice) estrategia;
+                    if (movRegice.isDebeLanzarRayo()) {
+                        this.proyectilesHielo.add(new ProyectilHielo(p.getX() + p.getWidth() / 2f, p.getY()));
+                        movRegice.consumirRayo();
+                    }
+                    if (movRegice.isDebeGenerarZona()) {
+                        this.zonasHielo.add(new ZonaHielo(centroEntrenadorX - 130f, this.entrenador.getY() - 20f));
+                        movRegice.consumirZona();
+                    }
+                }
+                
                 if (p instanceof EmisorConfusion) {
                     ProyectilConfusion proyectil = ((EmisorConfusion) p).consumirProyectil();
                     if (proyectil != null) this.proyectilesConfusion.add(proyectil);
                 }
+                
                 if (p.capturaCompletada()) {
                     if (p instanceof BossPokemon) {
                         GestorSpawns.getInstancia().setSpawnsActivos(true);
-                        // Opcional: this.jefeGenerado = false; // si quisieras que vuelva a salir a los 5000 pts
                     }
                     p.dispose();
                     iterPoke.remove();
@@ -230,6 +252,43 @@ public class PantallaJuego implements Screen {
                     iterProyectiles.remove();
                 }
             }
+            
+            Iterator<ProyectilHielo> iterHielo = this.proyectilesHielo.iterator();
+            while (iterHielo.hasNext()) {
+                ProyectilHielo rayo = iterHielo.next();
+              
+                rayo.update(delta, centroEntrenadorX); 
+                
+                if (rayo.verificarColision(this.entrenador)) {
+                    this.entrenador.recibirCongelamiento(3f);
+                    this.entrenador.recibirDano(); 
+                    iterHielo.remove();
+                } else if (rayo.salioDePantalla()) {
+                    iterHielo.remove();
+                }
+            }
+            
+            boolean pisandoHielo = false;
+            Iterator<ZonaHielo> iterZonas = this.zonasHielo.iterator();
+            while (iterZonas.hasNext()) {
+                ZonaHielo zona = iterZonas.next();
+                zona.update(delta, this.velocidadFondo);
+
+                if (zona.getHitbox().overlaps(this.entrenador.getHitbox())) {
+                    pisandoHielo = true;
+                }
+                if (zona.isExpirada()) {
+                    iterZonas.remove();
+                }
+            }
+
+            if (pisandoHielo && !this.entrenador.isCongelado()) {
+                this.entrenador.setVelocidad(this.velocidadOriginalEntrenador * 0.4f);
+                this.tiempoRecargaDisparo = 1.4f;
+            } else {
+                this.entrenador.setVelocidad(this.velocidadOriginalEntrenador); 
+                this.tiempoRecargaDisparo = 0.70f;
+            }
 
             // Logica de Revivir
             this.timerRevivires += delta;
@@ -285,7 +344,6 @@ public class PantallaJuego implements Screen {
                 }
             }
         } 
-        // FIN DEL BLOQUE DE CONGELAMIENTO
 
         // 6. Dibujar todo
         Gdx.gl.glClearColor(0, 0, 0, 1);
@@ -307,6 +365,9 @@ public class PantallaJuego implements Screen {
             this.game.getBatch().draw(this.texturaFondo, 0, this.fondoY2, anchoEscalado, altoEscalado);
         }
         
+        for (ZonaHielo z : this.zonasHielo) {
+            z.draw(this.game.getBatch());
+        }
         for (Pokemon p : this.pokemonesActivos) {
             p.draw(this.game.getBatch());
         }
@@ -315,6 +376,9 @@ public class PantallaJuego implements Screen {
         }
         for (ProyectilConfusion proyectil : this.proyectilesConfusion) {
             proyectil.draw(this.game.getBatch());
+        }
+        for (ProyectilHielo ph : this.proyectilesHielo) {
+            ph.draw(this.game.getBatch());
         }
         for (Revivir r : this.reviviresActivos) {
             r.draw(this.game.getBatch());
@@ -462,7 +526,11 @@ public class PantallaJuego implements Screen {
         if (this.shapeRenderer != null) this.shapeRenderer.dispose();
         this.entrenador.dispose();
         this.proyectilesConfusion.clear();
+        this.proyectilesHielo.clear();
+        this.zonasHielo.clear();
         ProyectilConfusion.disposeTexturaGlobal();
+        ProyectilHielo.disposeTexturaGlobal();
+        ZonaHielo.disposeTexturaGlobal();
         for (Pokemon p : this.pokemonesActivos) {
             p.dispose();
         }

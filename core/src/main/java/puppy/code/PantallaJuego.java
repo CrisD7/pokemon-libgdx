@@ -41,7 +41,8 @@ public class PantallaJuego implements Screen {
     private final ArrayList<ZonaHielo> zonasHielo = new ArrayList<>();
 
     private float timerDisparo;
-    private float tiempoRecargaDisparo = 0.70f; // Cooldown ligeramente mayor entre Pokéballs
+    private float tiempoRecargaDisparo;
+    private float tiempoRecargaDisparoBase;
     private int puntaje;
     private Array<Revivir> reviviresActivos;
     private float timerRevivires;
@@ -68,6 +69,7 @@ public class PantallaJuego implements Screen {
         this.game = game;
         
         GestorSpawns.getInstancia().reiniciar();
+        GestorSpawns.getInstancia().setSpawnsActivos(true);
         this.umbralBiomaActual = 0;
         cambiarBiomaAleatorio();
         
@@ -99,6 +101,12 @@ public class PantallaJuego implements Screen {
         this.pokemonesActivos = new ArrayList<>();
         this.pokeballsActivas = new ArrayList<>();
         this.timerDisparo = 0f;
+        if (this.game.getPersonajeSeleccionado().equalsIgnoreCase("chupete")) {
+            this.tiempoRecargaDisparoBase = 0.55f; 
+        } else {
+            this.tiempoRecargaDisparoBase = 0.70f;
+        }
+        this.tiempoRecargaDisparo = this.tiempoRecargaDisparoBase;
         this.puntaje = 0;
         this.reviviresActivos = new Array<>();
         this.timerRevivires = 0f;
@@ -284,10 +292,10 @@ public class PantallaJuego implements Screen {
 
             if (pisandoHielo && !this.entrenador.isCongelado()) {
                 this.entrenador.setVelocidad(this.velocidadOriginalEntrenador * 0.4f);
-                this.tiempoRecargaDisparo = 1.4f;
+                this.tiempoRecargaDisparo = this.tiempoRecargaDisparoBase * 2.0f; 
             } else {
                 this.entrenador.setVelocidad(this.velocidadOriginalEntrenador); 
-                this.tiempoRecargaDisparo = 0.70f;
+                this.tiempoRecargaDisparo = this.tiempoRecargaDisparoBase; 
             }
 
             // Logica de Revivir

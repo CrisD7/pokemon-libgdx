@@ -99,9 +99,14 @@ public class GestorSpawns {
     }
     
     public Pokemon generarJefe(int indiceBioma) {
-        float posX = Gdx.graphics.getWidth() / 2f - 64f;
+        float posX = Gdx.graphics.getWidth() / 2f - 96f;
         float posY = Gdx.graphics.getHeight() + 20f;
-        return new puppy.code.pokemones.Regice(posX, posY);
+
+        if (indiceBioma == 2) {
+            return new puppy.code.pokemones.Regice(posX, posY);
+        } else {
+            return new puppy.code.pokemones.Mewtwo(posX, posY);
+        }
     }
     
     public void reiniciar() {

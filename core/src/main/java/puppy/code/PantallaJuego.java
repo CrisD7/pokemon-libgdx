@@ -1,8 +1,6 @@
 package puppy.code;
 
 import java.util.ArrayList;
-import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.utils.Array;
 import java.util.Iterator;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -14,11 +12,14 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.utils.Array;
+import puppy.code.movimientos.EstrategiaMovimiento;
+import puppy.code.movimientos.MovimientoMewtwo;
+import puppy.code.movimientos.MovimientoRegice;
+import puppy.code.pokemones.BossPokemon;
 import puppy.code.pokemones.Pokemon;
 import puppy.code.spawns.GestorSpawns;
-import puppy.code.pokemones.BossPokemon;
-import puppy.code.movimientos.MovimientoRegice;
-import puppy.code.movimientos.EstrategiaMovimiento;
 
 public class PantallaJuego implements Screen {
     private Pokewalk game;
@@ -39,6 +40,9 @@ public class PantallaJuego implements Screen {
     
     private final ArrayList<ProyectilHielo> proyectilesHielo = new ArrayList<>();
     private final ArrayList<ZonaHielo> zonasHielo = new ArrayList<>();
+    
+    private final ArrayList<ProyectilPsiquico> proyectilesPsiquicos = new ArrayList<>();
+    private final ArrayList<ZonaPsiquica> zonasPsiquicas = new ArrayList<>();
 
     private float timerDisparo;
     private float tiempoRecargaDisparo;
@@ -195,6 +199,21 @@ public class PantallaJuego implements Screen {
                     }
                 }
                 
+                if (estrategia instanceof MovimientoMewtwo) {
+                    MovimientoMewtwo movMewtwo = (MovimientoMewtwo) estrategia;
+                    movMewtwo.actualizarObjetivo(centroEntrenadorX, centroEntrenadorY);
+                    if (movMewtwo.isDebeLanzarRayo()) {
+                        this.proyectilesPsiquicos.add(new ProyectilPsiquico(p.getX() + p.getWidth() / 2f, p.getY()));
+                        movMewtwo.consumirRayo();
+                    }
+                    if (movMewtwo.isDebeGenerarZonaTP()) {
+                        float centroMewtwoX = p.getX() + (p.getWidth() / 2f);
+                        float centroMewtwoY = p.getY() + (p.getHeight() / 2f);
+                        this.zonasPsiquicas.add(new ZonaPsiquica(centroMewtwoX, centroMewtwoY));
+                        movMewtwo.consumirZonaTP();
+                    }
+                }
+                
                 if (p instanceof EmisorConfusion) {
                     ProyectilConfusion proyectil = ((EmisorConfusion) p).consumirProyectil();
                     if (proyectil != null) this.proyectilesConfusion.add(proyectil);
@@ -277,6 +296,20 @@ public class PantallaJuego implements Screen {
                 }
             }
             
+            Iterator<ProyectilPsiquico> iterPsiquico = this.proyectilesPsiquicos.iterator();
+            while (iterPsiquico.hasNext()) {
+                ProyectilPsiquico rayo = iterPsiquico.next();
+                rayo.update(delta, centroEntrenadorX); 
+                
+                if (rayo.verificarColision(this.entrenador)) {
+                    this.entrenador.recibirDano(); 
+                    this.entrenador.recibirConfusion(3f);
+                    iterPsiquico.remove();
+                } else if (rayo.salioDePantalla()) {
+                    iterPsiquico.remove();
+                }
+            }
+            
             boolean pisandoHielo = false;
             Iterator<ZonaHielo> iterZonas = this.zonasHielo.iterator();
             while (iterZonas.hasNext()) {
@@ -304,6 +337,19 @@ public class PantallaJuego implements Screen {
                 this.entrenador.setVelocidad(this.velocidadOriginalEntrenador); 
                 this.tiempoRecargaDisparo = this.tiempoRecargaDisparoBase;
                 this.timerAcumuladoHielo = 0f;
+            }
+            
+            Iterator<ZonaPsiquica> iterZonaPsiquica = this.zonasPsiquicas.iterator();
+            while (iterZonaPsiquica.hasNext()) {
+                ZonaPsiquica zona = iterZonaPsiquica.next();
+                zona.update(delta, this.velocidadFondo);
+
+                if (zona.isPulsoActivo() && zona.getHitbox().overlaps(this.entrenador.getHitbox())) {
+                    if (zona.procesarDano()) {
+                        this.entrenador.recibirDano();
+                    }
+                }
+                if (zona.isExpirada()) iterZonaPsiquica.remove();
             }
 
             // Logica de Revivir
@@ -384,6 +430,9 @@ public class PantallaJuego implements Screen {
         for (ZonaHielo z : this.zonasHielo) {
             z.draw(this.game.getBatch());
         }
+        for (ZonaPsiquica zp : this.zonasPsiquicas) {
+        	zp.draw(this.game.getBatch());
+        }
         for (Pokemon p : this.pokemonesActivos) {
             p.draw(this.game.getBatch());
         }
@@ -395,6 +444,9 @@ public class PantallaJuego implements Screen {
         }
         for (ProyectilHielo ph : this.proyectilesHielo) {
             ph.draw(this.game.getBatch());
+        }
+        for (ProyectilPsiquico pp : this.proyectilesPsiquicos) {
+        	pp.draw(this.game.getBatch());
         }
         for (Revivir r : this.reviviresActivos) {
             r.draw(this.game.getBatch());
@@ -544,9 +596,13 @@ public class PantallaJuego implements Screen {
         this.proyectilesConfusion.clear();
         this.proyectilesHielo.clear();
         this.zonasHielo.clear();
+        this.proyectilesPsiquicos.clear();
+        this.zonasPsiquicas.clear();
         ProyectilConfusion.disposeTexturaGlobal();
         ProyectilHielo.disposeTexturaGlobal();
         ZonaHielo.disposeTexturaGlobal();
+        ProyectilPsiquico.disposeTexturaGlobal();
+        ZonaPsiquica.disposeTexturas();
         for (Pokemon p : this.pokemonesActivos) {
             p.dispose();
         }

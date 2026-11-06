@@ -562,12 +562,44 @@ public class PantallaJuego implements Screen {
         }
         this.game.getBatch().setColor(Color.WHITE);
 
+        float textoEstadoY = posY - 15f; 
+
         if (this.entrenador.isConfundido()) {
-            this.fuentePuntaje.draw(this.game.getBatch(), "CONFUSION", 20f, posY - 12f);
+            Color rosaClaro = new Color(1f, 0.6f, 0.8f, 1f); 
+            Color rosaOscuro = new Color(0.6f, 0f, 0.3f, 1f); 
+            dibujarTextoConBorde("CONFUNDIDO", 20f, textoEstadoY, rosaClaro, rosaOscuro);
+            textoEstadoY -= 35f;
         }
 
-        this.fuentePuntaje.draw(this.game.getBatch(), "Puntos: " + this.puntaje, 
-                                Gdx.graphics.getWidth() - 200f, Gdx.graphics.getHeight() - 25f);
+        if (this.entrenador.isCongelado()) {
+            Color celeste = new Color(0.4f, 0.9f, 1f, 1f); 
+            Color azulOscuro = new Color(0f, 0f, 0.5f, 1f); 
+            dibujarTextoConBorde("CONGELADO", 20f, textoEstadoY, celeste, azulOscuro);
+        }
+
+        dibujarTextoConBorde("Puntos: " + this.puntaje, 
+                Gdx.graphics.getWidth() - 200f, 
+                Gdx.graphics.getHeight() - 25f, 
+                Color.YELLOW, 
+                Color.BLUE);
+    }
+    
+    private void dibujarTextoConBorde(String texto, float x, float y, Color colorCentro, Color colorBorde) {
+        this.fuentePuntaje.setColor(colorBorde);
+
+        this.fuentePuntaje.draw(this.game.getBatch(), texto, x - 2, y);
+        this.fuentePuntaje.draw(this.game.getBatch(), texto, x + 2, y);
+        this.fuentePuntaje.draw(this.game.getBatch(), texto, x, y - 2);
+        this.fuentePuntaje.draw(this.game.getBatch(), texto, x, y + 2);
+        this.fuentePuntaje.draw(this.game.getBatch(), texto, x - 2, y - 2);
+        this.fuentePuntaje.draw(this.game.getBatch(), texto, x + 2, y + 2);
+        this.fuentePuntaje.draw(this.game.getBatch(), texto, x - 2, y + 2);
+        this.fuentePuntaje.draw(this.game.getBatch(), texto, x + 2, y - 2);
+
+        this.fuentePuntaje.setColor(colorCentro);
+        this.fuentePuntaje.draw(this.game.getBatch(), texto, x, y);
+
+        this.fuentePuntaje.setColor(Color.WHITE);
     }
 
     @Override public void show() {}

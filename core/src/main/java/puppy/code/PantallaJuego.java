@@ -17,6 +17,7 @@ import com.badlogic.gdx.utils.Array;
 import puppy.code.movimientos.EstrategiaMovimiento;
 import puppy.code.movimientos.MovimientoMewtwo;
 import puppy.code.movimientos.MovimientoRegice;
+import puppy.code.movimientos.MovimientoRayquaza;
 import puppy.code.pokemones.BossPokemon;
 import puppy.code.pokemones.Pokemon;
 import puppy.code.spawns.GestorSpawns;
@@ -43,6 +44,11 @@ public class PantallaJuego implements Screen {
     
     private final ArrayList<ProyectilPsiquico> proyectilesPsiquicos = new ArrayList<>();
     private final ArrayList<ZonaPsiquica> zonasPsiquicas = new ArrayList<>();
+    
+    private final ArrayList<ProyectilDragon> proyectilesDragon = new ArrayList<>();
+    private final ArrayList<ProyectilFuria> proyectilesFuria = new ArrayList<>();
+    private final ArrayList<ZonaCometa> zonasCometa = new ArrayList<>();
+    private final ArrayList<ZonaTrueno> zonasTrueno = new ArrayList<>();
 
     private float timerDisparo;
     private float tiempoRecargaDisparo;
@@ -187,6 +193,7 @@ public class PantallaJuego implements Screen {
                 p.actualizar(delta, this.velocidadFondo);
                 
                 EstrategiaMovimiento estrategia = p.getEstrategiaMovimiento();
+                
                 if (estrategia instanceof MovimientoRegice) {
                     MovimientoRegice movRegice = (MovimientoRegice) estrategia;
                     if (movRegice.isDebeLanzarRayo()) {
@@ -211,6 +218,46 @@ public class PantallaJuego implements Screen {
                         float centroMewtwoY = p.getY() + (p.getHeight() / 2f);
                         this.zonasPsiquicas.add(new ZonaPsiquica(centroMewtwoX, centroMewtwoY));
                         movMewtwo.consumirZonaTP();
+                    }
+                }
+                
+                if (estrategia instanceof MovimientoRayquaza) {
+                    MovimientoRayquaza movRay = (MovimientoRayquaza) estrategia;
+                    movRay.actualizarObjetivo(centroEntrenadorX, centroEntrenadorY);
+                    
+                    if (movRay.isDebeLanzarPulso()) {
+                        this.proyectilesDragon.add(new ProyectilDragon(p.getX() + p.getWidth() / 2f, p.getY()));
+                        movRay.consumirPulso();
+                    }
+
+                    if (movRay.isDebeGenerarCometas()) {
+                        float anchoPantalla = Gdx.graphics.getWidth();
+                        float anchoSector = anchoPantalla / 4f;
+
+                        for (int i = 0; i < 4; i++) {
+                            float minX = i * anchoSector;
+                            float maxX = minX + anchoSector - 120f;
+                            if(maxX < minX) maxX = minX + 10f;
+                            
+                            float randX = MathUtils.random(minX, maxX);
+                            float randY = MathUtils.random(50f, Gdx.graphics.getHeight() / 2f);
+                            this.zonasCometa.add(new ZonaCometa(randX, randY));
+                        }
+                        movRay.consumirCometas();
+                    }
+
+                    if (movRay.isDebeGenerarTrueno()) {
+                        this.zonasTrueno.add(new ZonaTrueno(movRay.getObjetivoX(), movRay.getObjetivoY()));
+                        movRay.consumirTrueno();
+                    }
+
+                    if (movRay.isDebeLanzarFuria()) {
+                        float centroX = p.getX() + p.getWidth() / 2f;
+                        float posY = p.getY();
+                        this.proyectilesFuria.add(new ProyectilFuria(centroX, posY, -150f, 300f));
+                        this.proyectilesFuria.add(new ProyectilFuria(centroX, posY, 0f, 400f));
+                        this.proyectilesFuria.add(new ProyectilFuria(centroX, posY, 150f, 300f));
+                        movRay.consumirFuria();
                     }
                 }
                 
@@ -310,6 +357,30 @@ public class PantallaJuego implements Screen {
                 }
             }
             
+            Iterator<ProyectilDragon> iterDragon = this.proyectilesDragon.iterator();
+            while (iterDragon.hasNext()) {
+                ProyectilDragon pd = iterDragon.next();
+                pd.update(delta);
+                if (pd.verificarColision(this.entrenador)) {
+                    this.entrenador.recibirDano();
+                    iterDragon.remove();
+                } else if (pd.salioDePantalla()) {
+                    iterDragon.remove();
+                }
+            }
+            
+            Iterator<ProyectilFuria> iterFuria = this.proyectilesFuria.iterator();
+            while (iterFuria.hasNext()) {
+                ProyectilFuria pf = iterFuria.next();
+                pf.update(delta);
+                if (pf.verificarColision(this.entrenador)) {
+                    this.entrenador.recibirDano();
+                    iterFuria.remove();
+                } else if (pf.salioDePantalla()) {
+                    iterFuria.remove();
+                }
+            }
+            
             boolean pisandoHielo = false;
             Iterator<ZonaHielo> iterZonas = this.zonasHielo.iterator();
             while (iterZonas.hasNext()) {
@@ -350,6 +421,30 @@ public class PantallaJuego implements Screen {
                     }
                 }
                 if (zona.isExpirada()) iterZonaPsiquica.remove();
+            }
+            
+            Iterator<ZonaCometa> iterCometa = this.zonasCometa.iterator();
+            while (iterCometa.hasNext()) {
+                ZonaCometa zc = iterCometa.next();
+                zc.update(delta, this.velocidadFondo);
+                if (zc.procesarDano() && zc.getHitbox().overlaps(this.entrenador.getHitbox())) {
+                    this.entrenador.recibirDano();
+                }
+                if (zc.isExpirada()) {
+                    iterCometa.remove();
+                }
+            }
+            
+            Iterator<ZonaTrueno> iterTrueno = this.zonasTrueno.iterator();
+            while (iterTrueno.hasNext()) {
+                ZonaTrueno zt = iterTrueno.next();
+                zt.update(delta, this.velocidadFondo);
+                if (zt.procesarDano() && zt.getHitbox().overlaps(this.entrenador.getHitbox())) {
+                    this.entrenador.recibirDano();
+                }
+                if (zt.isExpirada()) {
+                    iterTrueno.remove();
+                }
             }
 
             // Logica de Revivir
@@ -433,6 +528,12 @@ public class PantallaJuego implements Screen {
         for (ZonaPsiquica zp : this.zonasPsiquicas) {
         	zp.draw(this.game.getBatch());
         }
+        for (ZonaCometa zc : this.zonasCometa) { 
+        	zc.draw(this.game.getBatch()); 
+        }
+        for (ZonaTrueno zt : this.zonasTrueno) { 
+        	zt.draw(this.game.getBatch()); 
+        }
         for (Pokemon p : this.pokemonesActivos) {
             p.draw(this.game.getBatch());
         }
@@ -447,6 +548,12 @@ public class PantallaJuego implements Screen {
         }
         for (ProyectilPsiquico pp : this.proyectilesPsiquicos) {
         	pp.draw(this.game.getBatch());
+        }
+        for (ProyectilDragon pd : this.proyectilesDragon) { 
+        	pd.draw(this.game.getBatch()); 
+        }
+        for (ProyectilFuria pf : this.proyectilesFuria) { 
+        	pf.draw(this.game.getBatch());
         }
         for (Revivir r : this.reviviresActivos) {
             r.draw(this.game.getBatch());
@@ -627,13 +734,21 @@ public class PantallaJuego implements Screen {
         this.entrenador.dispose();
         this.proyectilesConfusion.clear();
         this.proyectilesHielo.clear();
+        this.proyectilesDragon.clear();
+        this.proyectilesFuria.clear();
         this.zonasHielo.clear();
         this.proyectilesPsiquicos.clear();
         this.zonasPsiquicas.clear();
+        this.zonasCometa.clear();
+        this.zonasTrueno.clear();
         ProyectilConfusion.disposeTexturaGlobal();
         ProyectilHielo.disposeTexturaGlobal();
         ZonaHielo.disposeTexturaGlobal();
         ProyectilPsiquico.disposeTexturaGlobal();
+        ProyectilDragon.disposeTexturaGlobal();
+        ProyectilFuria.disposeTexturaGlobal();
+        ZonaCometa.disposeTexturas();
+        ZonaTrueno.disposeTexturas();
         ZonaPsiquica.disposeTexturas();
         for (Pokemon p : this.pokemonesActivos) {
             p.dispose();

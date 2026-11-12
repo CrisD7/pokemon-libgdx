@@ -175,9 +175,13 @@ public class PantallaMenu implements Screen {
         int kadabra = prefs.getInteger("kadabraCapturados", 0);
         int snorunt = prefs.getInteger("snoruntCapturados", 0);
         int glalie = prefs.getInteger("glalieCapturados", 0);
+        int sudowoodo = prefs.getInteger("sudowoodoCapturados", 0);
+        int espeon = prefs.getInteger("espeonCapturados", 0);
         
         boolean gioDesbloqueado = snorlaxCapturados >= 25;
-        boolean chupeteDesbloqueado = (caterpie >= 26 && rattata >= 26 && kadabra >= 26 && snorlaxCapturados >= 26 && snorunt >= 26 && glalie >= 26);
+        boolean chupeteDesbloqueado = (caterpie >= 26 && rattata >= 26 && kadabra >= 26 && 
+                snorlaxCapturados >= 26 && sudowoodo >= 26 && 
+                espeon >= 26 && snorunt >= 26 && glalie >= 26);
 
         boolean hoverRealEthan = this.boundsEthan.contains(mouseX, mouseY);
         boolean hoverRealLyra = this.boundsLyra.contains(mouseX, mouseY);
@@ -251,7 +255,7 @@ public class PantallaMenu implements Screen {
                 this.game.getBatch().draw(this.texCandado, candadoX, candadoY, candadoSize, candadoSize);
             }
             if (hoverRealChupete) {
-                this.fuenteTexto.draw(this.game.getBatch(), "Captura 26 de cada\nPokémon existente.", this.boundsChupete.x + 5f, this.boundsChupete.y + 65f);
+                this.fuenteTexto.draw(this.game.getBatch(), "Captura 26 de cada\nPokemon existente.", this.boundsChupete.x + 5f, this.boundsChupete.y + 65f);
             }
         }
         
@@ -367,4 +371,10 @@ public class PantallaMenu implements Screen {
     public void setBoundsGio(Rectangle boundsGio) { this.boundsGio = boundsGio; }
     public float getEscalaGio() { return escalaGio; }
     public void setEscalaGio(float escalaGio) { this.escalaGio = escalaGio; }
+    public Texture getTexCardChupete() { return texCardChupete; }
+    public void setTexCardChupete(Texture texCardChupete) { this.texCardChupete = texCardChupete; }
+    public Rectangle getBoundsChupete() { return boundsChupete; }
+    public void setBoundsChupete(Rectangle boundsChupete) { this.boundsChupete = boundsChupete; }
+    public float getEscalaChupete() { return escalaChupete; }
+    public void setEscalaChupete(float escalaChupete) { this.escalaChupete = escalaChupete; }
 }

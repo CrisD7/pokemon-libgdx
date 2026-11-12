@@ -91,7 +91,7 @@ public class PantallaJuego implements Screen {
         this.fuentePuntaje.getData().setScale(2.0f);
         this.fuentePuntaje.setColor(Color.WHITE);
         
-        // Carga y reproducción de música de fondo en bucle
+        // Carga y reproduccion de musica de fondo en bucle
         this.musicaFondo = Gdx.audio.newMusic(Gdx.files.internal("musica_fondo.wav"));
         this.musicaFondo.setLooping(true);
         this.shapeRenderer = new ShapeRenderer();
@@ -164,7 +164,7 @@ public class PantallaJuego implements Screen {
                 this.proximoPuntajeJefe += 2500;
             }
 
-            // 3. Spawnear nuevos Pokémon
+            // 3. Spawnear nuevos Pokemon
             boolean biomaNevado = (this.indiceBiomaActual == 2); 
             Pokemon nuevo = GestorSpawns.getInstancia().intentarGenerarPokemon(delta, biomaNevado);
             
@@ -172,7 +172,7 @@ public class PantallaJuego implements Screen {
                 this.pokemonesActivos.add(nuevo);
             }
 
-            // 4. Actualizar Pokéballs activas
+            // 4. Actualizar Pokeballs activas
             Iterator<Pokeball> iterBalls = this.pokeballsActivas.iterator();
             while (iterBalls.hasNext()) {
                 Pokeball ball = iterBalls.next();
@@ -182,7 +182,7 @@ public class PantallaJuego implements Screen {
                 }
             }
 
-            // 5. Actualizar Pokémon y verificar colisiones
+            // 5. Actualizar Pokemon y verificar colisiones
             float centroEntrenadorX = this.entrenador.getX() + (this.entrenador.getWidth() / 2f);
             float centroEntrenadorY = this.entrenador.getY() + (this.entrenador.getHeight() / 2f);
 
@@ -605,38 +605,54 @@ public class PantallaJuego implements Screen {
         int rattata = prefs.getInteger("rattataCapturados", 0);
         int kadabra = prefs.getInteger("kadabraCapturados", 0);
         int snorlax = prefs.getInteger("snorlaxCapturados", 0);
+        int sudowoodo = prefs.getInteger("sudowoodoCapturados", 0);
+        int espeon = prefs.getInteger("espeonCapturados", 0);
         int snorunt = prefs.getInteger("snoruntCapturados", 0);
         int glalie = prefs.getInteger("glalieCapturados", 0);
+        
+        int mewtwo = prefs.getInteger("mewtwoCapturados", 0);
+        int regice = prefs.getInteger("regiceCapturados", 0);
+        int rayquaza = prefs.getInteger("rayquazaCapturados", 0);
         
         this.game.getBatch().setColor(0f, 0f, 0f, 0.6f);
         this.game.getBatch().draw(this.texturaFondo, 0, 0, ancho, alto); 
         this.game.getBatch().setColor(Color.WHITE);
         
         this.fuentePuntaje.setColor(Color.YELLOW);
-        this.fuentePuntaje.draw(this.game.getBatch(), "JUEGO PAUSADO", ancho / 2f - 140f, alto - 120f);
+        this.fuentePuntaje.getData().setScale(2.0f);
+        this.fuentePuntaje.draw(this.game.getBatch(), "JUEGO PAUSADO", ancho / 2f - 140f, alto - 50f);
         
         this.fuentePuntaje.setColor(Color.WHITE);
-        this.fuentePuntaje.draw(this.game.getBatch(), "Registro de Capturas", ancho / 2f - 180f, alto - 200f);
-        
         this.fuentePuntaje.getData().setScale(1.2f);
-        float col1 = ancho / 2f - 220f;
-        float col2 = ancho / 2f + 40f;
-        float filaBase = alto - 280f;
-        float saltoFila = 45f;
+        this.fuentePuntaje.draw(this.game.getBatch(), "Registro de Capturas", ancho / 2f - 120f, alto - 110f);
         
+        float col1 = ancho / 2f - 300f;
+        float col2 = ancho / 2f - 50f;
+        float col3 = ancho / 2f + 200f;
+        float filaBase = alto - 180f;
+        float saltoFila = 40f;
+
         this.fuentePuntaje.draw(this.game.getBatch(), "Caterpie: " + caterpie, col1, filaBase);
         this.fuentePuntaje.draw(this.game.getBatch(), "Rattata: " + rattata, col1, filaBase - saltoFila);
         this.fuentePuntaje.draw(this.game.getBatch(), "Kadabra: " + kadabra, col1, filaBase - saltoFila * 2);
+        this.fuentePuntaje.draw(this.game.getBatch(), "Snorlax: " + snorlax, col1, filaBase - saltoFila * 3);
+
+        this.fuentePuntaje.draw(this.game.getBatch(), "Sudowoodo: " + sudowoodo, col2, filaBase);
+        this.fuentePuntaje.draw(this.game.getBatch(), "Espeon: " + espeon, col2, filaBase - saltoFila);
+        this.fuentePuntaje.draw(this.game.getBatch(), "Snorunt: " + snorunt, col2, filaBase - saltoFila * 2);
+        this.fuentePuntaje.draw(this.game.getBatch(), "Glalie: " + glalie, col2, filaBase - saltoFila * 3);
+
+        this.fuentePuntaje.setColor(Color.GOLD);
+        this.fuentePuntaje.draw(this.game.getBatch(), "Mewtwo: " + mewtwo, col3, filaBase);
+        this.fuentePuntaje.draw(this.game.getBatch(), "Regice: " + regice, col3, filaBase - saltoFila);
+        this.fuentePuntaje.draw(this.game.getBatch(), "Rayquaza: " + rayquaza, col3, filaBase - saltoFila * 2);
         
-        this.fuentePuntaje.draw(this.game.getBatch(), "Snorlax: " + snorlax, col2, filaBase);
-        this.fuentePuntaje.draw(this.game.getBatch(), "Snorunt: " + snorunt, col2, filaBase - saltoFila);
-        this.fuentePuntaje.draw(this.game.getBatch(), "Glalie: " + glalie, col2, filaBase - saltoFila * 2);
-        
-        this.fuentePuntaje.getData().setScale(2.0f); 
-        
+        this.fuentePuntaje.getData().setScale(1.5f); 
         this.fuentePuntaje.setColor(Color.CYAN);
-        this.fuentePuntaje.draw(this.game.getBatch(), "[P] o [ESC] Volver a la partida", ancho / 2f - 240f, filaBase - 160f);
+        this.fuentePuntaje.draw(this.game.getBatch(), "[P] o [ESC] Volver a la partida", ancho / 2f - 200f, filaBase - 180f);
+
         this.fuentePuntaje.setColor(Color.WHITE);
+        this.fuentePuntaje.getData().setScale(2.0f);
     }
 
     private void actualizarDisparo(float delta) {
@@ -658,12 +674,15 @@ public class PantallaJuego implements Screen {
         float margenX = 20f;
         float posY = Gdx.graphics.getHeight() - tamanoCorazon - 20f;
 
-        for (int i = 0; i < this.entrenador.getVidasMaximas(); i++) {
+        int corazonesEnPantalla = Math.max(this.entrenador.getVidasMaximas(), this.entrenador.getVidasActuales());
+
+        for (int i = 0; i < corazonesEnPantalla; i++) {
             float posX = margenX + i * (tamanoCorazon + espacio);
+            
             if (i < this.entrenador.getVidasActuales()) {
-                this.game.getBatch().setColor(Color.WHITE);
+                this.game.getBatch().setColor(Color.WHITE); // Coraz�n lleno
             } else {
-                this.game.getBatch().setColor(0.15f, 0.15f, 0.15f, 0.75f);
+                this.game.getBatch().setColor(0.15f, 0.15f, 0.15f, 0.75f); // Coraz�n vac�o
             }
             this.game.getBatch().draw(this.texturaCorazon, posX, posY, tamanoCorazon, tamanoCorazon);
         }
@@ -835,7 +854,7 @@ public class PantallaJuego implements Screen {
         if (rutasBiomas == null || rutasBiomas.length < 2)
             throw new IllegalArgumentException("Se necesitan al menos dos biomas");
         for (String ruta : rutasBiomas) {
-            if (ruta == null || ruta.trim().isEmpty()) throw new IllegalArgumentException("Ruta de bioma vacía");
+            if (ruta == null || ruta.trim().isEmpty()) throw new IllegalArgumentException("Ruta de bioma vacia");
         }
         this.rutasBiomas = rutasBiomas.clone();
     }

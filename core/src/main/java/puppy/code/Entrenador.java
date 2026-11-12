@@ -56,12 +56,17 @@ public class Entrenador implements Colisionable {
         this.x = startX;
         this.y = startY;
         this.vidasMaximas = 3;
-        this.vidasActuales = 3;
+        
+        if (nombrePersonaje.equalsIgnoreCase("gio")) {
+            this.vidasActuales = 4; // Habilidad de Gio : Inicia con 4 vidas
+        } else {
+            this.vidasActuales = 3;
+        }
         this.herido = false;
         this.tiempoHerido = 0f;
         
         if (nombrePersonaje.equalsIgnoreCase("chupete")) {
-            this.velocidad = 340f; 
+            this.velocidad = 340f; // Habilidad de Chupete : Es mas rapido
         } else {
             this.velocidad = 280f; 
         }
@@ -136,7 +141,7 @@ public class Entrenador implements Colisionable {
                 this.y -= velocidadFondo * delta;
                 this.estaQuieto = true;
             } else {
-                // Movimiento lateral y hacia arriba solo si NO se está presionando abajo
+                // Movimiento lateral y hacia arriba solo si NO se esta� presionando abajo
                 if (izquierda) {
                     this.x -= this.velocidad * delta;
                 }
@@ -151,7 +156,7 @@ public class Entrenador implements Colisionable {
             this.estaQuieto = true;
         }
 
-        // Límites de pantalla (restringido a los 3/4 inferiores en Y)
+        // Limites de pantalla (restringido a los 3/4 inferiores en Y)
         if (this.x < 0) this.x = 0;
         if (this.x + this.width > Gdx.graphics.getWidth()) {
             this.x = Gdx.graphics.getWidth() - this.width;
@@ -219,7 +224,7 @@ public class Entrenador implements Colisionable {
         }
     }
 
-    // Sobrecarga para choque directo con Pokemon que aplica el daño
+    // Sobrecarga para choque directo con Pokemon
     public boolean verificarColision(Pokemon pokemon) {
         if (!this.herido && pokemon.isColisionActiva() && !pokemon.isCapturando() 
                 && this.hitbox.overlaps(pokemon.getHitbox())) {
@@ -238,7 +243,7 @@ public class Entrenador implements Colisionable {
         return false;
     }
 
-    // Implementación de la interfaz Colisionable (GM-4)
+    // Implementacion de la interfaz Colisionable (GM-4)
     @Override
     public boolean verificarColision(Colisionable otro) {
         return !this.herido && this.hitbox.overlaps(otro.getHitbox());
@@ -267,8 +272,10 @@ public class Entrenador implements Colisionable {
 
     public void recuperarVida(boolean alMaximo) {
     	this.sonidoCurar.play(0.7f);
-        if (alMaximo) {
-            this.vidasActuales = this.vidasMaximas;
+    	if (alMaximo) {
+            if (this.vidasActuales < this.vidasMaximas) {
+                this.vidasActuales = this.vidasMaximas;
+            }
         } else {
             if (this.vidasActuales < this.vidasMaximas) {
                 this.vidasActuales++;

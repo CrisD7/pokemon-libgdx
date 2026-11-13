@@ -19,7 +19,7 @@ import puppy.code.pokemones.Glalie;
 import puppy.code.pokemones.Espeon;
 
 public class GestorSpawns {
-    // Instancia única estática y privada (GM-6)
+    // Instancia unica estatica y privada (GM-6)
     private static GestorSpawns instancia;
 
     private static final float INTERVALO_INICIAL = 1.2f;
@@ -47,7 +47,7 @@ public class GestorSpawns {
         return instancia;
     }
 
-    // Permite agregar nuevas especies en tiempo de ejecución sin tocar la lógica de sorteo (Cumple OCP)
+    // Permite agregar nuevas especies en tiempo de ejecucion sin tocar la logica de sorteo (Cumple OCP)
     public void registrarSpawn(EntradaSpawn nuevaEntrada) {
         ArrayList<EntradaSpawn> nuevo = getCatalogoSpawns();
         nuevo.add(java.util.Objects.requireNonNull(nuevaEntrada, "nuevaEntrada").copia());
@@ -116,7 +116,7 @@ public class GestorSpawns {
         this.intervaloSpawn = INTERVALO_INICIAL;
     }
 
-    // Reduce el intervalo de aparición a medida que sube el puntaje.
+    // Reduce el intervalo de aparicion a medida que sube el puntaje.
     public void actualizarDificultadSegunPuntaje(int puntajeActual) {
         this.intervaloSpawn = Math.max(INTERVALO_MINIMO,
                 INTERVALO_INICIAL - (puntajeActual / 150) * REDUCCION_POR_NIVEL);
@@ -157,11 +157,11 @@ public class GestorSpawns {
         for (EntradaSpawn entrada : catalogoSpawns) total += entrada.pesoPara(esNevado);
         return total;
     }
-    /** El total es derivado; no se puede desincronizar del catálogo. */
+    /** El total es derivado; no se puede desincronizar del catalogo. */
     public void setPesoTotal(int peso) {
-        if (peso != getPesoTotal()) throw new IllegalArgumentException("El total depende del catálogo");
+        if (peso != getPesoTotal()) throw new IllegalArgumentException("El total depende del catalogo");
     }
-    /** Selección determinista para una tirada en [1,total], sin crear entidades ni recursos. */
+    /** Seleccion determinista para una tirada en [1,total], sin crear entidades ni recursos. */
     public EntradaSpawn seleccionarEntrada(boolean esNevado, int tirada) {
         if (tirada < 1 || tirada > getPesoTotal(esNevado))
             throw new IllegalArgumentException("Tirada fuera del peso total");

@@ -13,7 +13,6 @@ public class Regice extends BossPokemon {
     private Texture texEmbestida;
     private Texture texRayo;
     private Texture texZona;
-    private float timerImpacto = 0f;
 
     public Regice(float x, float y) {
         super(x, y, "pokemones/regice.png"); 
@@ -27,15 +26,6 @@ public class Regice extends BossPokemon {
         this.texEmbestida = new Texture(Gdx.files.internal("pokemones/regiceEmbestida.png"));
         this.texRayo = new Texture(Gdx.files.internal("pokemones/regiceRayoHielo.png"));
         this.texZona = new Texture(Gdx.files.internal("pokemones/regiceZonaHielo.png"));
-    }
-    
-    @Override
-    public boolean recibirImpactoPokeball() {
-        boolean impactado = super.recibirImpactoPokeball();
-        if (impactado) {
-            this.timerImpacto = 0.15f;
-        }
-        return impactado;
     }
 
     @Override
@@ -63,9 +53,8 @@ public class Regice extends BossPokemon {
             }
         }
         
-        if (timerImpacto > 0) {
-            timerImpacto -= Gdx.graphics.getDeltaTime();
-            batch.setColor(1f, 0.4f, 0.4f, 1f);
+        if (getTiempoGolpeado() > 0f) {
+            batch.setColor(1f, 0.15f, 0.15f, 1f);
         } else {
             batch.setColor(Color.WHITE);
         }

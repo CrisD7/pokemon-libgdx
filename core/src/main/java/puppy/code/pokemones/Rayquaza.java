@@ -9,7 +9,6 @@ import puppy.code.movimientos.MovimientoRayquaza;
 
 public class Rayquaza extends BossPokemon {
     private Texture texIdle, texAtaque, texEnfado, texCansado;
-    private float timerImpacto = 0f;
 
     public Rayquaza(float x, float y) {
         super(x, y, "pokemones/rayquaza.png");
@@ -24,13 +23,6 @@ public class Rayquaza extends BossPokemon {
     }
 
     @Override public boolean salioDePantalla() { return false; }
-
-    @Override
-    public boolean recibirImpactoPokeball() {
-        boolean impactado = super.recibirImpactoPokeball();
-        if (impactado) this.timerImpacto = 0.15f;
-        return impactado;
-    }
 
     @Override
     public void draw(SpriteBatch batch) {
@@ -49,9 +41,8 @@ public class Rayquaza extends BossPokemon {
             }
         }
 
-        if (timerImpacto > 0) {
-            timerImpacto -= Gdx.graphics.getDeltaTime();
-            batch.setColor(1f, 0.4f, 0.4f, 1f);
+        if (getTiempoGolpeado() > 0f) {
+            batch.setColor(1f, 0.15f, 0.15f, 1f); 
         } else {
             batch.setColor(Color.WHITE);
         }

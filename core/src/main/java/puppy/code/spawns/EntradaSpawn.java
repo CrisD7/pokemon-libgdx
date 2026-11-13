@@ -6,7 +6,7 @@ import java.util.function.Supplier;
 import puppy.code.movimientos.EstrategiaMovimiento;
 import puppy.code.pokemones.Pokemon;
 
-/** Pesos relativos por bioma y fábricas polimórficas; no depende del orden del catálogo. */
+/** Pesos relativos por bioma y fabricas polimorficas; no depende del orden del catalogo. */
 public class EntradaSpawn {
     private int pesoProbabilidad;
     private int pesoNevado;
@@ -32,7 +32,7 @@ public class EntradaSpawn {
 
     public int pesoPara(boolean esNevado) { return esNevado ? pesoNevado : pesoProbabilidad; }
     public Pokemon crearInstanciaBase(float x, float y) {
-        return Objects.requireNonNull(creadorBase.apply(x, y), "La fábrica no puede devolver null");
+        return Objects.requireNonNull(creadorBase.apply(x, y), "La fabrica no puede devolver null");
     }
     public EstrategiaMovimiento crearEstrategiaInicial() {
         return Objects.requireNonNull(creadorEstrategia.get(), "La estrategia no puede ser null");

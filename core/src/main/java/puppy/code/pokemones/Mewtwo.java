@@ -10,7 +10,6 @@ import puppy.code.movimientos.MovimientoMewtwo;
 public class Mewtwo extends BossPokemon {
     private Texture texIdle, texAviso, texDash, texRayo, texTP;
     private Texture texMarcaTP;
-    private float timerImpacto = 0f;
 
     public Mewtwo(float x, float y) {
         super(x, y, "pokemones/mewtwo.png");
@@ -47,13 +46,6 @@ public class Mewtwo extends BossPokemon {
     }
 
     @Override
-    public boolean recibirImpactoPokeball() {
-        boolean impactado = super.recibirImpactoPokeball();
-        if (impactado) this.timerImpacto = 0.15f;
-        return impactado;
-    }
-
-    @Override
     public void draw(SpriteBatch batch) {
         Texture texturaActual = this.texIdle;
         EstrategiaMovimiento estrat = getEstrategiaMovimiento();
@@ -76,9 +68,8 @@ public class Mewtwo extends BossPokemon {
             }
         }
 
-        if (timerImpacto > 0) {
-            timerImpacto -= Gdx.graphics.getDeltaTime();
-            batch.setColor(1f, 0.4f, 0.4f, 1f);
+        if (getTiempoGolpeado() > 0f) {
+            batch.setColor(1f, 0.15f, 0.15f, 1f);
         } else {
             batch.setColor(Color.WHITE);
         }
@@ -93,6 +84,8 @@ public class Mewtwo extends BossPokemon {
         if (texIdle != null) texIdle.dispose();
         if (texAviso != null) texAviso.dispose();
         if (texDash != null) texDash.dispose();
+        if (texRayo != null) texRayo.dispose();
+        if (texTP != null) texTP.dispose();
         if (texMarcaTP != null) texMarcaTP.dispose();
     }
 

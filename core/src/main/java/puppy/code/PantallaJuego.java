@@ -680,9 +680,9 @@ public class PantallaJuego implements Screen {
             float posX = margenX + i * (tamanoCorazon + espacio);
             
             if (i < this.entrenador.getVidasActuales()) {
-                this.game.getBatch().setColor(Color.WHITE); // Corazón lleno
+                this.game.getBatch().setColor(Color.WHITE); // CorazÃ³n lleno
             } else {
-                this.game.getBatch().setColor(0.15f, 0.15f, 0.15f, 0.75f); // Corazón vacío
+                this.game.getBatch().setColor(0.15f, 0.15f, 0.15f, 0.75f); // CorazÃ³n vacÃ­o
             }
             this.game.getBatch().draw(this.texturaCorazon, posX, posY, tamanoCorazon, tamanoCorazon);
         }
@@ -834,18 +834,24 @@ public class PantallaJuego implements Screen {
     public void setVelocidadFondo(float velocidadFondo) { this.velocidadFondo = velocidadFondo; }
     public Entrenador getEntrenador() { return entrenador; }
     public void setEntrenador(Entrenador entrenador) { this.entrenador = entrenador; }
-    public ArrayList<Pokemon> getPokemonesActivos() { return pokemonesActivos; }
-    public void setPokemonesActivos(ArrayList<Pokemon> pokemonesActivos) { this.pokemonesActivos = pokemonesActivos; }
-    public ArrayList<Pokeball> getPokeballsActivas() { return pokeballsActivas; }
-    public void setPokeballsActivas(ArrayList<Pokeball> pokeballsActivas) { this.pokeballsActivas = pokeballsActivas; }
+    public ArrayList<Pokemon> getPokemonesActivos() { return new ArrayList<>(pokemonesActivos); }
+    public void setPokemonesActivos(ArrayList<Pokemon> pokemonesActivos) {
+        this.pokemonesActivos = new ArrayList<>(pokemonesActivos);
+    }
+    public ArrayList<Pokeball> getPokeballsActivas() { return new ArrayList<>(pokeballsActivas); }
+    public void setPokeballsActivas(ArrayList<Pokeball> pokeballsActivas) {
+        this.pokeballsActivas = new ArrayList<>(pokeballsActivas);
+    }
     public float getTimerDisparo() { return timerDisparo; }
     public void setTimerDisparo(float timerDisparo) { this.timerDisparo = timerDisparo; }
     public float getTiempoRecargaDisparo() { return tiempoRecargaDisparo; }
     public void setTiempoRecargaDisparo(float tiempoRecargaDisparo) { this.tiempoRecargaDisparo = tiempoRecargaDisparo; }
     public int getPuntaje() { return puntaje; }
     public void setPuntaje(int puntaje) { this.puntaje = puntaje; }
-    public Array<Revivir> getReviviresActivos() { return reviviresActivos; }
-    public void setReviviresActivos(Array<Revivir> reviviresActivos) { this.reviviresActivos = reviviresActivos; }
+    public Array<Revivir> getReviviresActivos() { return new Array<>(reviviresActivos); }
+    public void setReviviresActivos(Array<Revivir> reviviresActivos) {
+        this.reviviresActivos = new Array<>(reviviresActivos);
+    }
     public float getTimerRevivires() { return timerRevivires; }
     public void setTimerRevivires(float timerRevivires) { this.timerRevivires = timerRevivires; }
 

@@ -262,7 +262,12 @@ public final class RevisionSmokeTest extends Pokewalk {
         comprobar(juego.getTexturaFondo().getTextureObjectHandle() != 0, "Misma pantalla no se libera");
         Espeon atacante = new Espeon(juego.getEntrenador().getX()
                 + juego.getEntrenador().getWidth() / 2f - 50f, 300f);
-        juego.getPokemonesActivos().add(atacante);
+        ArrayList<Pokemon> pokemones = juego.getPokemonesActivos();
+        pokemones.add(atacante);
+        comprobar(juego.getPokemonesActivos().isEmpty(), "El getter protege la colección de Pokémon");
+        juego.setPokemonesActivos(pokemones);
+        pokemones.clear();
+        comprobar(juego.getPokemonesActivos().contains(atacante), "El setter copia la colección de Pokémon");
         juego.render(0.1f);
         juego.setEstaPausado(true);
         juego.render(1f);
@@ -275,8 +280,12 @@ public final class RevisionSmokeTest extends Pokewalk {
         juego.render(1f);
         comprobar(juego.getEntrenador().getTiempoConfusion() == restante, "Pausa congela duración del efecto");
         juego.setEstaPausado(false);
-        juego.getPokemonesActivos().add(new Snorlax(0, 400));
-        juego.getReviviresActivos().add(new Revivir(0, 400, true));
+        pokemones = juego.getPokemonesActivos();
+        pokemones.add(new Snorlax(0, 400));
+        juego.setPokemonesActivos(pokemones);
+        com.badlogic.gdx.utils.Array<Revivir> revivires = juego.getReviviresActivos();
+        revivires.add(new Revivir(0, 400, true));
+        juego.setReviviresActivos(revivires);
         juego.render(0.016f);
         juego.getEntrenador().setVidasActuales(0);
         juego.render(0.016f);

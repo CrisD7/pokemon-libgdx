@@ -141,7 +141,7 @@ public class Entrenador implements Colisionable {
                 this.y -= velocidadFondo * delta;
                 this.estaQuieto = true;
             } else {
-                // Movimiento lateral y hacia arriba solo si NO se esta¡ presionando abajo
+                // Movimiento lateral y hacia arriba cuando no se presiona abajo.
                 if (izquierda) {
                     this.x -= this.velocidad * delta;
                 }

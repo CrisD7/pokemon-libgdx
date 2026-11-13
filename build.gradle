@@ -54,6 +54,10 @@ configure(subprojects) {
   compileJava {
     options.incremental = true
   }
+
+  tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+  }
 }
 
 subprojects {
